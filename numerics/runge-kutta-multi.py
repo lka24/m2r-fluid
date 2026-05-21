@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import copy 
 
 
 def iterate(tn, xn, yn, func1, func2, dt):
@@ -52,76 +51,66 @@ def runge_single(t0, x0, y0, func1, func2, iters, dt):
     return history
 
 
-def func1(t, x, y):
-    return -y
-
-
-def func2(t, x, y):
-    return x
-
-
 def periodify(x_range, y_range, hist):
     times = [hist[j][0] for j in range(len(hist))]
     exes = [hist[j][1] for j in range(len(hist))]
     whys = [hist[j][2] for j in range(len(hist))]
     new_x = []
     new_y = []
-    flags = [False for _ in range(len(hist))]
+    sectors_x = []
+    sectors_y = []
     for x in exes:
         current_x = x
-        try:
-            flags[len(new_x)] = not (x_range[0] <= current_x <= x_range[1]) and not flags[len(new_x)-1]
-        except:
-            flags[len(new_x)] = not (x_range[0] <= current_x <= x_range[1])
+        count = 0
         while not x_range[0] <= current_x <= x_range[1]:
             if current_x > x_range[1]:
                 current_x -= x_range[1] - x_range[0]
+                count -= 1
             else:
                 current_x += x_range[1] - x_range[0]
+                count += 1
         new_x.append(current_x)
-        print(current_x)
+        sectors_x.append(count)
+
     for y in whys:
         current_y = y
-        try:
-            flags[len(new_y)] = not (y_range[0] <= current_y <= y_range[1]) or flags[len(new_y)] and not flags[len(new_y)-1]
-        except:
-            flags[len(new_y)] = not (y_range[0] <= current_y <= y_range[1]) or flags[len(new_y)]
-            # FIXME: THE THING DOES NOT REMEMBER THE SEGMENT IT IS IN
+        count = 0
         while not y_range[0] <= current_y <= y_range[1]:
             if current_y > y_range[1]:
                 current_y -= y_range[1] - y_range[0]
+                count -= 1
             else:
                 current_y += y_range[1] - y_range[0]
+                count += 1
         new_y.append(current_y)
-    
+        sectors_y.append(count)
+
     master = [[]]
     for j in range(len(hist)):
-        if flags[j]:
+        if sectors_x[j] != sectors_x[max(j-1,0)] or sectors_y[j] != sectors_y[max(j-1,0)]:
             master.append(list())
         master[-1].append((times[j], new_x[j], new_y[j]))
     return master
 
 
-def rover(range, current):
-    while not range[0] <= current <= range[1]:
-        if current > range[1]:
-            current -= range[1] - range[0]
-        else:
-            current += range[1] - range[0]
-    return current
+# ------------------ TESTING -------------------
 
-hist = runge_single(0, 0.5, 0.5, func1, func2, 100, 0.1)
-exes = [hist[j][1] for j in range(len(hist))]
-whys = [hist[j][2] for j in range(len(hist))]
-fig, ax = plt.subplots()
-ax.set_xlim(-1, 1)
-ax.set_ylim(-1, 1.5)
-x_range = (-0.5, 0.5)
-y_range = (0.5, 1.5)
-hist, old = periodify(x_range, y_range, hist), hist
-for piece in hist:
-    exes = [piece[j][1] for j in range(len(piece))]
-    whys = [piece[j][2] for j in range(len(piece))]
-    print(piece)
-    plt.plot(exes, whys)
-    plt.show()
+# def func1(t, x, y):
+#     return -y
+# def func2(t, x, y):
+#     return x
+# hist = runge_single(0, 0.5, 0.5, func1, func2, 100, 0.1)
+# exes = [hist[j][1] for j in range(len(hist))]
+# whys = [hist[j][2] for j in range(len(hist))]
+# fig, ax = plt.subplots()
+# ax.set_xlim(-1, 1)
+# ax.set_ylim(-1, 1.5)
+# x_range = (-0.5, 0.5)
+# y_range = (0.5, 1.5)
+# hist, old = periodify(x_range, y_range, hist), hist
+# for piece in hist:
+#    exes = [piece[j][1] for j in range(len(piece))]
+#    whys = [piece[j][2] for j in range(len(piece))]
+#    print(piece)
+#    plt.plot(exes, whys)
+# plt.show()
