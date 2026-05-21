@@ -1,3 +1,5 @@
+# Only contains 1D RK, should not be used.
+
 def iterate(xn, yn, func, dt):
     """One iteration of Runge-Kutta.
 

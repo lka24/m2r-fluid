@@ -50,6 +50,44 @@ def runge_single(t0, x0, y0, func1, func2, iters, dt):
     return history
 
 
+def runge(t0, exes, whys, func1, func2, iters: int, dt):
+    """Many iterations of Runge-Kutta, on many points.
+    The x-list [x1, x2, ...] and y-list [y1, y2, ...]
+    must have the same length and represent initial
+    points (x1, y1), (x2, y2), ...
+
+    Args:
+        t0 (float): initial value of t
+        exes (_type_): list of initial values of x
+        whys (_type_): list of initial values of y
+        func1 (function): RHS of differential eqn - x component
+        func2 (function): RHS of diffential eqn - y component
+        iters (int): no. of iterations
+        dt (float): timestep
+
+    Raises:
+        ValueError: when x-list's length differs from y-list's
+        ValueError: when iters is not an int
+        ValueError: when iters <= 0
+        ValueError: when dt <= 0
+
+    Returns:
+        list: list of trajectories/histories of each individual point
+    """
+    if len(exes) != len(whys):
+        raise ValueError("x-list must have same length as y-list")
+    if not isinstance(iters, int):
+        raise ValueError("iters must be int")
+    if not iters > 0:
+        raise ValueError("iters must be positive")
+    if not dt > 0:
+        raise ValueError("dt must be positive")
+    hists = []
+    for j in range(len(exes)):
+        hists.append(runge_single(t0, exes[j], whys[j], func1, func2, iters, dt))
+    return hists
+
+
 def periodify(x_range, y_range, hist):
     """Given list of tuples in correct format,
     map those which escape the x_range times
