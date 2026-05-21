@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -24,7 +23,7 @@ def iterate(tn, xn, yn, func1, func2, dt):
     k3y = func2(tn + dt/2, xn + k2x * dt/2, yn + k2y * dt/2)
     k4x = func1(tn + dt, xn + k3x * dt, yn + k3y * dt)
     k4y = func2(tn + dt, xn + k3x * dt, yn + k3y * dt)
-    
+
     return tn + dt, xn + (dt/6) * (k1x + 2*k2x + 2*k3x + k4x), yn + (dt/6) * (k1y + 2*k2y + 2*k3y + k4y)
 
 
@@ -52,6 +51,19 @@ def runge_single(t0, x0, y0, func1, func2, iters, dt):
 
 
 def periodify(x_range, y_range, hist):
+    """Given list of tuples in correct format,
+    map those which escape the x_range times
+    y_range box to the other edge of the box.
+    (Rectangular regions only.)
+
+    Args:
+        x_range (tuple): interval (xmin, xmax)
+        y_range (tuple): interval (ymin, ymax)
+        hist (list): list of tuples (t, x, y) representing points
+
+    Returns:
+        list: the different periodic "pieces" split into lists inside the large list
+    """
     times = [hist[j][0] for j in range(len(hist))]
     exes = [hist[j][1] for j in range(len(hist))]
     whys = [hist[j][2] for j in range(len(hist))]
