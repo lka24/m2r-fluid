@@ -141,26 +141,3 @@ def periodify(x_range, y_range, hist):
             master.append(list())
         master[-1].append((times[j], new_x[j], new_y[j]))
     return master
-
-
-# ------------------ TESTING -------------------
-
-# def func1(t, x, y):
-#     return -y
-# def func2(t, x, y):
-#     return x
-# hist = runge_single(0, 0.5, 0.5, func1, func2, 100, 0.1)
-# exes = [hist[j][1] for j in range(len(hist))]
-# whys = [hist[j][2] for j in range(len(hist))]
-# fig, ax = plt.subplots()
-# ax.set_xlim(-1, 1)
-# ax.set_ylim(-1, 1.5)
-# x_range = (-0.5, 0.5)
-# y_range = (0.5, 1.5)
-# hist, old = periodify(x_range, y_range, hist), hist
-# for piece in hist:
-#    exes = [piece[j][1] for j in range(len(piece))]
-#    whys = [piece[j][2] for j in range(len(piece))]
-#    print(piece)
-#    plt.plot(exes, whys)
-# plt.show()
