@@ -1,64 +1,80 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Parameters
+np.random.seed(100)
+
 beta = 1.0
-sigma = 2.0
+sigma = 1.5
 t = 0.0
+
+# Physical grid
 
 Nx = 200
 Ny = 200
 
-x = np.linspace(-2 * np.pi, 2 * np.pi, Nx)
-y = np.linspace(-2 * np.pi, 2 * np.pi, Ny)
+Lx = 20
+Ly = 20
+
+x = np.linspace(-Lx/2, Lx/2, Nx)
+y = np.linspace(-Ly/2, Ly/2, Ny)
 
 X, Y = np.meshgrid(x, y)
 
-k_vals = np.arange(-6, 7)
-l_vals = np.arange(-6, 7)
+dx = x[1] - x[0]
+dy = y[1] - y[0]
 
-psi = np.zeros_like(X, dtype=complex)
+# Fourier-space grid
 
-for k in k_vals:
-    for l in l_vals:
-        if k == 0 and l == 0:
-            continue
+k_vals = 2*np.pi*np.fft.fftfreq(Nx, d=dx)
+l_vals = 2*np.pi*np.fft.fftfreq(Ny, d=dy)
 
-        q = np.sqrt(k**2 + l**2)
+K, L = np.meshgrid(k_vals, l_vals)
 
-        A = np.exp(-(q**2) / (2 * sigma**2))
+q = np.sqrt(K**2 + L**2)
 
-        omega = -beta * k / (k**2 + l**2)
+# Avoid singularity
+q[0,0] = 1e-10
 
-        phi = 2 * np.pi * np.random.rand()
+# Bell-shaped spectrum
 
-        psi += A * np.exp(1j * (k * X + l * Y - omega * t + phi))
+A_mag = np.exp(-(q**2)/(2*sigma**2))
+
+# Random phases
+phi = np.random.uniform(0, 2*np.pi, size=(Ny, Nx))
+
+# Complex Fourier amplitudes
+A = A_mag * np.exp(1j * phi)
+
+# Rossby dispersion relation
+
+omega = -beta * K / (q**2)
+
+# Time evolution
+psi_hat = A * np.exp(-1j * omega * t)
+psi_hat[0,0] = 0
+
+# Inverse FFT
+
+psi = np.fft.ifft2(psi_hat)
 
 psi_real = np.real(psi)
 
-dy = y[1] - y[0]
-dx = x[1] - x[0]
-
+# Velocity field
 u = -np.gradient(psi_real, dy, axis=0)
-v = np.gradient(psi_real, dx, axis=1)
+v =  np.gradient(psi_real, dx, axis=1)
 
-# ===================================================
-# Horizontal figure
-# ===================================================
 
 fig, (ax1, ax2) = plt.subplots(
     1, 2,
-    figsize=(16, 6),
-    gridspec_kw={"width_ratios": [1, 1.4]}
+    figsize=(16,6),
+    gridspec_kw={"width_ratios":[1,1.5]}
 )
 
-# ===================================================
-# Left: A(q), with q negative and positive
-# ===================================================
+# Left: spectrum
 
-q_plot = np.linspace(-10, 10, 500)
+q_plot = np.linspace(-10,10,500)
 
-A_plot = np.exp(-(q_plot**2) / (2 * sigma**2))
+A_plot = np.exp(-(q_plot**2)/(2*sigma**2))
 
 ax1.plot(q_plot, A_plot, linewidth=2)
 
@@ -69,35 +85,40 @@ ax1.set_title("Bell-shaped Spectrum")
 
 ax1.grid(True)
 
-# ===================================================
-# Right: Rossby wave field
-# ===================================================
+# Right: physical field
 
-contour = ax2.contourf(
-    X, Y, psi_real,
-    levels=40
+cf = ax2.contourf(
+    X,
+    Y,
+    psi_real,
+    levels=40,
+    cmap='RdBu_r'
 )
 
-fig.colorbar(contour, ax=ax2, label=r"$\psi(x,y)$")
+fig.colorbar(
+    cf,
+    ax=ax2,
+    label=r'$\psi(x,y,t)$'
+)
 
-skip = 10
+k = 10
 
 ax2.quiver(
-    X[::skip, ::skip],
-    Y[::skip, ::skip],
-    u[::skip, ::skip],
-    v[::skip, ::skip],
-    scale=60
+    X[::k,::k],
+    Y[::k,::k],
+    u[::k,::k],
+    v[::k,::k],
+    scale=0.03,
+    color='black',
+    alpha=0.7
 )
 
 ax2.set_xlabel("x")
 ax2.set_ylabel("y")
 
-ax2.set_title(
-    "Rossby Wave Field\nfrom Inverse Fourier Synthesis"
-)
+ax2.set_title("Rossby Wave Field using FFT")
 
-ax2.set_aspect("equal")
+ax2.set_aspect('equal')
 
 plt.tight_layout()
 plt.show()
