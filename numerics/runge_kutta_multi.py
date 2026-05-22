@@ -1,6 +1,3 @@
-import matplotlib.pyplot as plt
-
-
 def iterate(tn, xn, yn, func1, func2, dt):
     """One iteration of Runge-Kutta.
 
@@ -27,7 +24,7 @@ def iterate(tn, xn, yn, func1, func2, dt):
     return tn + dt, xn + (dt/6) * (k1x + 2*k2x + 2*k3x + k4x), yn + (dt/6) * (k1y + 2*k2y + 2*k3y + k4y)
 
 
-def runge_single(t0, x0, y0, func1, func2, iters, dt):
+def runge_single(t0, x0, y0, func1, func2, iters, dt, only_endpoints=False):
     """Many iterations of Runge-Kutta.
 
     Args:
@@ -38,19 +35,26 @@ def runge_single(t0, x0, y0, func1, func2, iters, dt):
         func2 (function): RHS of diffential eqn - y component
         iters (int): no. of iterations
         dt (float): timestep
+        only_endpoints (bool, optional): whether to give full history
+        or only where each particle ends up. Default is False.
 
     Returns:
-        list: history of the particle
+        list or tuple: history of the particle
     """
     t, x, y = t0, x0, y0
     history = [(t0, x0, y0)]
-    for j in range(iters):
+    for j in range(iters-1):
         t, x, y = iterate(t, x, y, func1, func2, dt)
-        history.append((t, x, y))
-    return history
+        if not only_endpoints:
+            history.append((t, x, y))
+    t, x, y = iterate(t, x, y, func1, func2, dt)
+    if not only_endpoints:
+        history.append((t,x,y))
+        return history
+    return (t,x,y)
 
 
-def runge(t0, exes, whys, func1, func2, iters: int, dt):
+def runge(t0, exes, whys, func1, func2, iters: int, dt, only_endpoints=False):
     """Many iterations of Runge-Kutta, on many points.
     The x-list [x1, x2, ...] and y-list [y1, y2, ...]
     must have the same length and represent initial
@@ -64,6 +68,8 @@ def runge(t0, exes, whys, func1, func2, iters: int, dt):
         func2 (function): RHS of diffential eqn - y component
         iters (int): no. of iterations
         dt (float): timestep
+        only_endpoints (bool, optional): whether to give full history
+        or only where each particle ends up. Default is False.
 
     Raises:
         ValueError: when x-list's length differs from y-list's
@@ -84,7 +90,7 @@ def runge(t0, exes, whys, func1, func2, iters: int, dt):
         raise ValueError("dt must be positive")
     hists = []
     for j in range(len(exes)):
-        hists.append(runge_single(t0, exes[j], whys[j], func1, func2, iters, dt))
+        hists.append(runge_single(t0, exes[j], whys[j], func1, func2, iters, dt, only_endpoints))
     return hists
 
 
