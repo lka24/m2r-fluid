@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def iterate(tn, xn, yn, func1, func2, dt):
     """One iteration of Runge-Kutta.
 
@@ -147,3 +150,9 @@ def periodify(x_range, y_range, hist):
             master.append(list())
         master[-1].append((times[j], new_x[j], new_y[j]))
     return master
+
+
+def pointsquare(xcoords, ycoords):
+    xgrid, ygrid = np.meshgrid(xcoords, ycoords)
+    points = np.vstack([xgrid.ravel(), ygrid.ravel()]).T
+    return [pt[0] for pt in points], [pt[1] for pt in points]
