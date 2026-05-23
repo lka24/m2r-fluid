@@ -63,62 +63,66 @@ psi_real = np.real(psi)
 u = -np.gradient(psi_real, dy, axis=0)
 v =  np.gradient(psi_real, dx, axis=1)
 
+# Adding this if statement as I need to import this
+# and I do not want to redraw the plot when I run
+# the other file.
 
-fig, (ax1, ax2) = plt.subplots(
-    1, 2,
-    figsize=(16,6),
-    gridspec_kw={"width_ratios":[1,1.5]}
-)
+if __name__ == '__main__':
+    fig, (ax1, ax2) = plt.subplots(
+        1, 2,
+        figsize=(16,6),
+        gridspec_kw={"width_ratios":[1,1.5]}
+    )
 
-# Left: spectrum
+    # Left: spectrum
 
-q_plot = np.linspace(-10,10,500)
+    q_plot = np.linspace(-10,10,500)
 
-A_plot = np.exp(-(q_plot**2)/(2*sigma**2))
+    A_plot = np.exp(-(q_plot**2)/(2*sigma**2))
 
-ax1.plot(q_plot, A_plot, linewidth=2)
+    ax1.plot(q_plot, A_plot, linewidth=2)
 
-ax1.set_xlabel(r"$q$")
-ax1.set_ylabel(r"$A(q)$")
+    ax1.set_xlabel(r"$q$")
+    ax1.set_ylabel(r"$A(q)$")
 
-ax1.set_title("Bell-shaped Spectrum")
+    ax1.set_title("Bell-shaped Spectrum")
 
-ax1.grid(True)
+    ax1.grid(True)
 
-# Right: physical field
+    # Right: physical field
 
-cf = ax2.contourf(
-    X,
-    Y,
-    psi_real,
-    levels=40,
-    cmap='RdBu_r'
-)
+    cf = ax2.contourf(
+        X,
+        Y,
+        psi_real,
+        levels=40,
+        cmap='RdBu_r'
+    )
 
-fig.colorbar(
-    cf,
-    ax=ax2,
-    label=r'$\psi(x,y,t)$'
-)
+    fig.colorbar(
+        cf,
+        ax=ax2,
+        label=r'$\psi(x,y,t)$'
+    )
 
-k = 10
+    k = 10
 
-ax2.quiver(
-    X[::k,::k],
-    Y[::k,::k],
-    u[::k,::k],
-    v[::k,::k],
-    scale=0.03,
-    color='black',
-    alpha=0.7
-)
+    ax2.quiver(
+        X[::k,::k],
+        Y[::k,::k],
+        u[::k,::k],
+        v[::k,::k],
+        scale=0.03,
+        color='black',
+        alpha=0.7
+    )
 
-ax2.set_xlabel("x")
-ax2.set_ylabel("y")
+    ax2.set_xlabel("x")
+    ax2.set_ylabel("y")
 
-ax2.set_title("Rossby Wave Field using FFT")
+    ax2.set_title("Rossby Wave Field using FFT")
 
-ax2.set_aspect('equal')
+    ax2.set_aspect('equal')
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()

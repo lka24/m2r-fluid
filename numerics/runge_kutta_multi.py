@@ -82,7 +82,12 @@ def runge(t0, exes, whys, func1, func2, iters: int, dt, only_endpoints=False):
 
     Returns:
         list: list of trajectories/histories of each individual point
+        
+    Note:
+        Can be very slow with many points. It's recommended to use numpy
+        arrays and `runge_single` instead.
     """
+
     if len(exes) != len(whys):
         raise ValueError("x-list must have same length as y-list")
     if not isinstance(iters, int):
