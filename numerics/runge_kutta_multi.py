@@ -152,7 +152,9 @@ def periodify(x_range, y_range, hist):
     return master
 
 
-def pointsquare(xcoords, ycoords):
+def pointsquare(xcoords, ycoords, split=True):
     xgrid, ygrid = np.meshgrid(xcoords, ycoords)
     points = np.vstack([xgrid.ravel(), ygrid.ravel()]).T
-    return [pt[0] for pt in points], [pt[1] for pt in points]
+    if split:
+        return [pt[0] for pt in points], [pt[1] for pt in points]
+    return points
