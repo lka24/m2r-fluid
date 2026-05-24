@@ -116,44 +116,39 @@ def periodify(x_range, y_range, hist):
     Returns:
         list: the different periodic "pieces" split into lists inside the large list
     """
-    times = [hist[j][0] for j in range(len(hist))]
-    exes = [hist[j][1] for j in range(len(hist))]
-    whys = [hist[j][2] for j in range(len(hist))]
-    new_x = []
-    new_y = []
-    sectors_x = []
-    sectors_y = []
-    for x in exes:
-        current_x = x
-        count = 0
-        while not x_range[0] <= current_x <= x_range[1]:
-            if current_x > x_range[1]:
-                current_x -= x_range[1] - x_range[0]
-                count -= 1
-            else:
-                current_x += x_range[1] - x_range[0]
-                count += 1
-        new_x.append(current_x)
-        sectors_x.append(count)
+    xmin, xmax = x_range
+    ymin, ymax = y_range
 
-    for y in whys:
-        current_y = y
-        count = 0
-        while not y_range[0] <= current_y <= y_range[1]:
-            if current_y > y_range[1]:
-                current_y -= y_range[1] - y_range[0]
-                count -= 1
-            else:
-                current_y += y_range[1] - y_range[0]
-                count += 1
-        new_y.append(current_y)
-        sectors_y.append(count)
+    lx_box = xmax - xmin
+    ly_box = ymax - ymin
 
-    master = [[]]
-    for j in range(len(hist)):
-        if sectors_x[j] != sectors_x[max(j-1,0)] or sectors_y[j] != sectors_y[max(j-1,0)]:
-            master.append(list())
-        master[-1].append((times[j], new_x[j], new_y[j]))
+    master = []
+    current_segment = []
+
+    prev_x = None
+    prev_y = None
+
+    for t, x, y in hist:
+
+        # wrap into box
+        new_x = ((x - xmin) % lx_box) + xmin
+        new_y = ((y - ymin) % ly_box) + ymin
+
+        # if jump is too large, it means crossing boundary
+        if prev_x is not None:
+            if abs(new_x - prev_x) > lx_box / 2 or abs(new_y - prev_y) > ly_box / 2:
+                if current_segment:
+                    master.append(current_segment)
+                current_segment = []
+
+        current_segment.append((t, new_x, new_y))
+
+        prev_x = new_x
+        prev_y = new_y
+
+    if current_segment:
+        master.append(current_segment)
+
     return master
 
 

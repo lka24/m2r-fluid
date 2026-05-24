@@ -3,17 +3,15 @@ import inverse_fourier as invf
 import runge_kutta_multi as rkm
 import numpy as np
 import scipy.interpolate as spi
-
+import scipy.stats as sps
 
 # Module-level constants
 ITERS = 100
-DT = 0.1
+DT = 0.01
 ONLY_EPS = False
 METHOD = "linear"
 
-# NOTE: Far too many x,y pairs are given to use this
-# for a useful plot; I will consider how to remove
-# some in the future. 
+# AB
 exes = invf.x
 whys = invf.y
 t0 = invf.t
@@ -23,23 +21,28 @@ t0 = invf.t
 # In `Inverse_fourier.py`, u and v are np arrays so
 # we will construct interpolating functions for them.
 
-square_x, square_y = rkm.pointsquare(exes, whys)
-x_range = (min(square_x), max(square_x))
-y_range = (min(square_y), max(square_y))
+sampler = sps.qmc.Halton(d=2, scramble=True)
+sample = sampler.random(n=1000)
+scaled_sample = sps.qmc.scale(sample, [-10, -10], [10, 10])
+square_x = scaled_sample[:, 0]
+square_y = scaled_sample[:, 1]
+
+x_range = (-10, 10)
+y_range = (-10, 10)
 
 
 # invf.u and invf.v are tiny. I will scale them up
 # for the moment so that we can actually see movement
 
 interpolator_u = spi.RegularGridInterpolator(
-    (exes, whys),
+    (whys, exes),
     100000 * invf.u,
     METHOD
 )
 
 
 interpolator_v = spi.RegularGridInterpolator(
-    (exes, whys),
+    (whys, exes),
     100000 * invf.v,
     METHOD
 )
@@ -48,14 +51,14 @@ interpolator_v = spi.RegularGridInterpolator(
 def wrapper_u(t, x, y):
     x = x_range[0] + np.mod(x - x_range[0], x_range[1] - x_range[0])
     y = y_range[0] + np.mod(y - y_range[0], y_range[1] - y_range[0])
-    pts = np.column_stack((x,y))
+    pts = np.column_stack((y,x))
     return interpolator_u(pts).squeeze()
 
 
 def wrapper_v(t, x, y):
     x = x_range[0] + np.mod(x - x_range[0], x_range[1] - x_range[0])
     y = y_range[0] + np.mod(y - y_range[0], y_range[1] - y_range[0])
-    pts = np.column_stack((x,y))
+    pts = np.column_stack((y,x))
     return interpolator_v(pts).squeeze()
 
 
@@ -85,5 +88,5 @@ for j in range(len(periodichists)):
     for piece in periodichists[j]:
         xs = [r[1] for r in piece]
         ys = [r[2] for r in piece]
-        plt.plot(xs, ys, color="purple")
+        plt.plot(xs, ys, linewidth=0.75)
 plt.show()
