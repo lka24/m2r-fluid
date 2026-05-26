@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 np.random.seed(100)
 
 beta = 1.0
-sigma = 1.5
+sigma = 0.01
 t = 0.0
 
 # Physical grid
@@ -12,8 +12,8 @@ t = 0.0
 Nx = 200
 Ny = 200
 
-Lx = 20
-Ly = 20
+Lx = 1e3
+Ly = 1e3
 
 x = np.linspace(-Lx/2, Lx/2, Nx)
 y = np.linspace(-Ly/2, Ly/2, Ny)
@@ -37,7 +37,7 @@ q[0,0] = 1e-10
 
 # Bell-shaped spectrum
 
-A_mag = np.exp(-(q**2)/(2*sigma**2))
+A_mag = q**2 * np.exp(-(q**2)/(2*sigma**2))
 
 # Random phases
 phi = np.random.uniform(0, 2*np.pi, size=(Ny, Nx))
@@ -59,6 +59,9 @@ psi = np.fft.ifft2(psi_hat)
 
 psi_real = np.real(psi)
 
+# normalize ONLY for plotting visibility
+psi_real /= np.max(np.abs(psi_real))
+
 # Velocity field
 u = -np.gradient(psi_real, dy, axis=0)
 v =  np.gradient(psi_real, dx, axis=1)
@@ -76,9 +79,9 @@ if __name__ == '__main__':
 
     # Left: spectrum
 
-    q_plot = np.linspace(-10,10,500)
+    q_plot = np.linspace(0,0.05, 500)
 
-    A_plot = np.exp(-(q_plot**2)/(2*sigma**2))
+    A_plot = q_plot**2 * np.exp(-(q_plot**2)/(2*sigma**2))
 
     ax1.plot(q_plot, A_plot, linewidth=2)
 
@@ -112,9 +115,9 @@ if __name__ == '__main__':
         Y[::k,::k],
         u[::k,::k],
         v[::k,::k],
-        scale=0.03,
+        scale=0.8,
         color='black',
-        alpha=0.7
+        alpha=0.5
     )
 
     ax2.set_xlabel("x")
