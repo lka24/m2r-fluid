@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
-import inverse_fourier as invf
+import Inverse_fourier as invf
 import runge_kutta_multi as rkm
 import numpy as np
 import scipy.interpolate as spi
 import scipy.stats as sps
 
 # Module-level constants
-ITERS = 100
+ITERS = 500
 DT = 0.01
 ONLY_EPS = False
 METHOD = "cubic"
@@ -16,20 +16,19 @@ exes = invf.x
 whys = invf.y
 t0 = invf.t
 
+x_range = (-500, 500)
+y_range = (-500, 500)
 # The differential equation that needs to be solved is
 # dx/dt = U(x(t), t) where U is the velocity field.
 # In `Inverse_fourier.py`, u and v are np arrays so
 # we will construct interpolating functions for them.
 
-sampler = sps.qmc.Halton(d=2, scramble=True)
-sample = sampler.random(n=1000)
-scaled_sample = sps.qmc.scale(sample, [-10, -10], [10, 10])
-square_x = scaled_sample[:, 0]
-square_y = scaled_sample[:, 1]
+# sampler = sps.qmc.Halton(d=2, scramble=True)
+# sample = sampler.random(n=1000)
+# scaled_sample = sps.qmc.scale(sample, list(x_range), [75, 75])
 
-x_range = (-10, 10)
-y_range = (-10, 10)
-
+square_x = np.random.uniform(min(x_range), max(x_range), 100)
+square_y = np.random.uniform(min(y_range), max(y_range), 100)
 
 # invf.u and invf.v are tiny. I will scale them up
 # for the moment so that we can actually see movement
@@ -69,7 +68,12 @@ X2 = np.random.uniform(-10, 10, 1)
 history = rkm.runge_single(t0, np.array(square_x), np.array(square_y), wrapper_u, wrapper_v, ITERS, DT, ONLY_EPS)
 #history  = rkm.runge_single(t0, square_x[0], square_y[0], wrapper_u, wrapper_v, ITERS, DT, ONLY_EPS)
 
-fig, ax = plt.subplots()
+
+import matplotlib
+matplotlib.rc('font', family='Century')
+
+
+fig, ax2 = plt.subplots()
 #ax.set_xlim(x_range[0], x_range[1])
 #ax.set_ylim(y_range[0], y_range[1])
 
@@ -85,12 +89,19 @@ for i in range(X.shape[1]):
 
 periodichists = []
 for j in hists:
-    j = rkm.periodify((-10,10), (-10,10), j)
+    j = rkm.periodify(x_range, y_range, j)
     periodichists.append(j)
 
+epsilon = 2
 for j in range(len(periodichists)):
-    for piece in periodichists[j]:
-        xs = [r[1] for r in piece]
-        ys = [r[2] for r in piece]
-        plt.plot(xs, ys, linewidth=0.75)
+    for offset_x in range(2):
+        for offset_y in range(2):
+            for piece in periodichists[j]:
+                xs = offset_x * (x_range[1] - x_range[0] - epsilon) + np.array([r[1] for r in piece])
+                ys = offset_y * (y_range[1] - y_range[0]- epsilon) + np.array([r[2] for r in piece])
+                # ax1.plot(xs, ys, linewidth=0.75, color="blue")
+                if offset_x == 0 and offset_y == 0:
+                    ax2.plot(xs, ys, linewidth=0.75, color="blue")
+
+plt.savefig('rossby1.png', dpi=300)
 plt.show()
