@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.random.seed(100)
-
+np.random.seed(123)
+ 
 beta = 1.0
 sigma = 1.5
 t = 0.0
@@ -126,3 +126,10 @@ if __name__ == '__main__':
 
     plt.tight_layout()
     plt.show()
+
+sum = 0
+for ex in range(len(x)):
+    for why in range(len(y)):
+        sum += np.sqrt(u[why][ex]**2 + v[why][ex]**2)
+
+print(sum/(len(x) * len(y)))

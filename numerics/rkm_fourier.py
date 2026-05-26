@@ -11,7 +11,7 @@ DT = 0.01
 ONLY_EPS = False
 METHOD = "linear"
 
-# AB
+# X values and y values, and starting time.
 exes = invf.x
 whys = invf.y
 t0 = invf.t
@@ -60,6 +60,10 @@ def wrapper_v(t, x, y):
     y = y_range[0] + np.mod(y - y_range[0], y_range[1] - y_range[0])
     pts = np.column_stack((y,x))
     return interpolator_v(pts).squeeze()
+
+
+X1 = np.random.uniform(-10, 10, 1)[0]
+X2 = np.random.uniform(-10, 10, 1)
 
 
 history = rkm.runge_single(t0, np.array(square_x), np.array(square_y), wrapper_u, wrapper_v, ITERS, DT, ONLY_EPS)

@@ -342,7 +342,7 @@ def interpolation_v(t, xp, yp):
     yp = ((yp + Ly/2) % Ly) - Ly/2
     return v_interp([yp, xp]).item()
 """ testing fft field"""
-Np = 1000
+Np = 1
 xp = np.random.uniform(-Lx/2, Lx/2, Np)
 yp = np.random.uniform(-Ly/2, Ly/2, Np)
 all_hist = runge(
@@ -383,10 +383,10 @@ v = X
 
 u_interp = setup_interpolation(x, y, u)
 v_interp = setup_interpolation(x, y, v)
-Np = 10
+Np = 100
 xp = np.random.uniform(-10, 10, Np)
 yp = np.random.uniform(-10, 10, Np)
-all_hist = runge(0,xp,yp,interpolation_u,interpolation_v,1000,0.01)
+all_hist = runge(0,xp,yp,interpolation_u,interpolation_v,1000,0.1)
 periodic_hist = []
 for h in all_hist:
     periodic_hist.append(periodify((-10, 10),(-10, 10),h))
