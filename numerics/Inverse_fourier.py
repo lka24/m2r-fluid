@@ -1,106 +1,99 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.random.seed(123)
- 
-beta = 1.0
 
-t = 0.0
+def generate_rossby_field(
+    seed=123,
+    beta=1.0,
+    sigma=0.01,
+    t=0.0,
+    Nx=200,
+    Ny=200,
+    Lx=1e3,
+    Ly=1e3
+):
+    np.random.seed(seed)
 
-# Physical grid
+    x = np.linspace(-Lx/2, Lx/2, Nx)
+    y = np.linspace(-Ly/2, Ly/2, Ny)
 
-Nx = 200
-Ny = 200
+    X, Y = np.meshgrid(x, y)
 
-Lx = 1e3
-Ly = 1e3
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
 
-# sigma and L is inversely proportional
-sigma = 0.01
+    k_vals = 2 * np.pi * np.fft.fftfreq(Nx, d=dx)
+    l_vals = 2 * np.pi * np.fft.fftfreq(Ny, d=dy)
 
-x = np.linspace(-Lx/2, Lx/2, Nx)
-y = np.linspace(-Ly/2, Ly/2, Ny)
+    K, L = np.meshgrid(k_vals, l_vals)
 
-X, Y = np.meshgrid(x, y)
+    q = np.sqrt(K**2 + L**2)
+    q[0, 0] = 1e-10
 
-dx = x[1] - x[0]
-dy = y[1] - y[0]
+    A_mag = q**2 * np.exp(-(q**2) / (2 * sigma**2))
 
-# Fourier-space grid
+    phi = np.random.uniform(0, 2*np.pi, size=(Ny, Nx))
 
-k_vals = 2*np.pi*np.fft.fftfreq(Nx, d=dx)
-l_vals = 2*np.pi*np.fft.fftfreq(Ny, d=dy)
+    A = A_mag * np.exp(1j * phi)
 
-K, L = np.meshgrid(k_vals, l_vals)
+    omega = -beta * K / (q**2)
 
-q = np.sqrt(K**2 + L**2)
+    psi_hat = A * np.exp(-1j * omega * t)
+    psi_hat[0, 0] = 0
 
-# Avoid singularity
-q[0,0] = 1e-10
+    psi = np.fft.ifft2(psi_hat)
+    psi_real = np.real(psi)
 
-# Bell-shaped spectrum
 
-A_mag = q**2 * np.exp(-(q**2)/(2*sigma**2))
+    u = -np.gradient(psi_real, dy, axis=0)
+    v = np.gradient(psi_real, dx, axis=1)
 
-# Random phases
-phi = np.random.uniform(0, 2*np.pi, size=(Ny, Nx))
+    return X, Y, x, y, psi_real, u, v, q, A_mag
 
-# Complex Fourier amplitudes
-A = A_mag * np.exp(1j * phi)
 
-# Rossby dispersion relation
+def average_velocity_magnitude(u, v):
+    return np.mean(np.sqrt(u**2 + v**2))
 
-omega = -beta * K / (q**2)
 
-# Time evolution
-psi_hat = A * np.exp(-1j * omega * t)
-psi_hat[0,0] = 0
+def plot_rossby_field(
+    X,
+    Y,
+    psi_real,
+    u,
+    v,
+    sigma=0.01,
+    arrow_step=10,
+    quiver_scale=0.8
+):
+    
+    # normalize ONLY for plotting
+    norm = np.max(np.abs(psi_real))
 
-# Inverse FFT
+    psi_plot = psi_real / norm
 
-psi = np.fft.ifft2(psi_hat)
+    u_plot = u / norm
+    v_plot = v / norm
 
-psi_real = np.real(psi)
-
-# normalize ONLY for plotting visibility
-psi_real /= np.max(np.abs(psi_real))
-
-# Velocity field
-u = -np.gradient(psi_real, dy, axis=0)
-v =  np.gradient(psi_real, dx, axis=1)
-
-# Adding this if statement as I need to import this
-# and I do not want to redraw the plot when I run
-# the other file.
-
-if __name__ == '__main__':
     fig, (ax1, ax2) = plt.subplots(
         1, 2,
-        figsize=(16,6),
-        gridspec_kw={"width_ratios":[1,1.5]}
+        figsize=(16, 6),
+        gridspec_kw={"width_ratios": [1, 1.5]}
     )
 
-    # Left: spectrum
-
-    q_plot = np.linspace(0,0.05, 500)
-
-    A_plot = q_plot**2 * np.exp(-(q_plot**2)/(2*sigma**2))
+    q_plot = np.linspace(0, 0.05, 500)
+    A_plot = q_plot**2 * np.exp(-(q_plot**2) / (2 * sigma**2))
 
     ax1.plot(q_plot, A_plot, linewidth=2)
 
     ax1.set_xlabel(r"$q$")
     ax1.set_ylabel(r"$A(q)$")
-
     ax1.set_title("Bell-shaped Spectrum")
-
     ax1.grid(True)
-
-    # Right: physical field
 
     cf = ax2.contourf(
         X,
         Y,
-        psi_real,
+        psi_plot,
         levels=40,
         cmap='RdBu_r'
     )
@@ -108,34 +101,41 @@ if __name__ == '__main__':
     fig.colorbar(
         cf,
         ax=ax2,
-        label=r'$\psi(x,y,t)$'
+        label=r'Normalized $\psi(x,y,t)$'
     )
 
-    k = 10
-
     ax2.quiver(
-        X[::k,::k],
-        Y[::k,::k],
-        u[::k,::k],
-        v[::k,::k],
-        scale=0.8,
+        X[::arrow_step, ::arrow_step],
+        Y[::arrow_step, ::arrow_step],
+        u_plot[::arrow_step, ::arrow_step],
+        v_plot[::arrow_step, ::arrow_step],
+        scale=quiver_scale,
         color='black',
         alpha=0.5
     )
 
     ax2.set_xlabel("x")
     ax2.set_ylabel("y")
-
     ax2.set_title("Rossby Wave Field using FFT")
-
     ax2.set_aspect('equal')
 
     plt.tight_layout()
     plt.show()
 
-sum = 0
-for ex in range(len(x)):
-    for why in range(len(y)):
-        sum += np.sqrt(u[why][ex]**2 + v[why][ex]**2)
 
-print(sum/(len(x) * len(y)))
+if __name__ == "__main__":
+    X, Y, x, y, psi_real, u, v, q, A_mag = generate_rossby_field()
+
+    plot_rossby_field(
+        X,
+        Y,
+        psi_real,
+        u,
+        v,
+        sigma=0.01,
+        arrow_step=10,
+        quiver_scale=0.8
+    )
+
+    avg_speed = average_velocity_magnitude(u, v)
+    print(avg_speed)
