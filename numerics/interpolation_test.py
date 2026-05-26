@@ -323,7 +323,7 @@ def setup_interpolation(x,y,func):
     func_interp = RegularGridInterpolator(
     (y, x),
     func,
-    method="linear",
+    method="cubic",
     bounds_error=False,
     fill_value=None)
     return func_interp

@@ -9,7 +9,7 @@ import scipy.stats as sps
 ITERS = 100
 DT = 0.01
 ONLY_EPS = False
-METHOD = "linear"
+METHOD = "cubic"
 
 # X values and y values, and starting time.
 exes = invf.x
