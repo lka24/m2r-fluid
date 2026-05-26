@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 np.random.seed(100)
 
 beta = 1.0
-sigma = 0.01
+
 t = 0.0
 
 # Physical grid
@@ -14,6 +14,9 @@ Ny = 200
 
 Lx = 1e3
 Ly = 1e3
+
+# sigma and L is inversely proportional
+sigma = 0.01
 
 x = np.linspace(-Lx/2, Lx/2, Nx)
 y = np.linspace(-Ly/2, Ly/2, Ny)
