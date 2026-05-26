@@ -63,7 +63,7 @@ def plot_rossby_field(
     v,
     sigma=0.01,
     arrow_step=10,
-    quiver_scale=0.8
+    quiver_scale=0.3
 ):
     
     # normalize ONLY for plotting
@@ -131,10 +131,7 @@ if __name__ == "__main__":
         Y,
         psi_real,
         u,
-        v,
-        sigma=0.01,
-        arrow_step=10,
-        quiver_scale=0.8
+        v
     )
 
     avg_speed = average_velocity_magnitude(u, v)
