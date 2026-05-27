@@ -10,7 +10,8 @@ def generate_rossby_field(
     Nx=200,
     Ny=200,
     Lx=1e3,
-    Ly=1e3
+    Ly=1e3,
+    given_phi=None
 ):
     np.random.seed(seed)
 
@@ -32,7 +33,10 @@ def generate_rossby_field(
 
     A_mag = q**2 * np.exp(-(q**2) / (2 * sigma**2))
 
-    phi = np.random.uniform(0, 2*np.pi, size=(Ny, Nx))
+    if given_phi is None:
+        phi = np.random.uniform(0, 2*np.pi, size=(Ny, Nx))
+    else:
+        phi = given_phi
 
     A = A_mag * np.exp(1j * phi)
 
