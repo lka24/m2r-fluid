@@ -52,7 +52,7 @@ def generate_rossby_field(
     u = -np.gradient(psi_real, dy, axis=0)
     v = np.gradient(psi_real, dx, axis=1)
 
-    return X, Y, x, y, psi_real, u, v, q, A_mag
+    return X, Y, x, y, psi_real, u, v, q, A_mag, A, omega
 
 
 def average_velocity_magnitude(u, v):
