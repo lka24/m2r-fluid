@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 
 def generate_rossby_field(
     seed=123,
-    beta=1.0,
-    sigma=0.01,
+    beta=1.728e-3,
+    sigma=0.02,
     t=0.0,
     Nx=200,
     Ny=200,
@@ -67,7 +67,7 @@ def plot_rossby_field(
     v,
     sigma=0.01,
     arrow_step=10,
-    quiver_scale=0.3
+    quiver_scale=0.7
 ):
     
     # normalize ONLY for plotting

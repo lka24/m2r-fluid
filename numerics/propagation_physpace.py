@@ -2,18 +2,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Inverse_fourier import generate_rossby_field
 from matplotlib.animation import FuncAnimation
-from IPython.display import HTML
-
 
 def animate_rossby_field(
     seed=123,
-    beta=1.0,
+    beta=1.728e-3,
     sigma=0.02,
     Nx=200,
     Ny=200,
     Lx=1e3,
     Ly=1e3,
-    dt_days=0.01,
+    total_days=1000,
     n_frames=150,
     arrow_step=10,
     quiver_scale=0.7
@@ -34,7 +32,7 @@ def animate_rossby_field(
 
     norm = np.max(np.abs(psi_real))
 
-    times = np.arange(n_frames) * dt_days
+    times = np.linspace(0, total_days, n_frames)
 
     fig, (ax1, ax2) = plt.subplots(
         1, 2,
@@ -113,7 +111,9 @@ def animate_rossby_field(
     )
 
     plt.tight_layout()
-    return HTML(anim.to_jshtml())
+    plt.show(block=True)
+    return anim
 
 
-animate_rossby_field()
+if __name__ == "__main__":
+    animate_rossby_field(total_days=1000, n_frames=150)
