@@ -16,7 +16,8 @@ def animate_rossby_field(
     dt_days=0.01,
     n_frames=150,
     arrow_step=10,
-    quiver_scale=0.7
+    quiver_scale=0.7,
+    html_wanted=True
 ):
     X, Y, x, y, psi_real, u, v, q, A_mag, A, omega = generate_rossby_field(
         seed=seed,
@@ -58,7 +59,7 @@ def animate_rossby_field(
         cmap="RdBu_r",
         vmin=-1,
         vmax=1,
-        animated=True
+        animated=True,
     )
 
     fig.colorbar(
@@ -113,7 +114,10 @@ def animate_rossby_field(
     )
 
     plt.tight_layout()
-    return HTML(anim.to_jshtml())
-
+    if html_wanted:
+        return HTML(anim.to_jshtml())
+    else:
+        anim.save("movie.gif")
 
 animate_rossby_field()
+# animate_rossby_field(html_wanted=False)
