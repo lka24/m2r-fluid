@@ -6,15 +6,14 @@ import scipy.interpolate as spi
 import scipy.stats as sps
 
 # Module-level constants
-ITERS = 500
+ITERS = 2000
 DT = 0.01
 ONLY_EPS = False
 METHOD = "cubic"
 
 # X values and y values, and starting time.
-exes = invf.x
-whys = invf.y
-t0 = invf.t
+X, Y, exes, whys, psi_real, u, v, q, A_mag = invf.generate_rossby_field()
+t0 = 0.0
 
 x_range = (-500, 500)
 y_range = (-500, 500)
@@ -35,14 +34,14 @@ square_y = np.random.uniform(min(y_range), max(y_range), 100)
 
 interpolator_u = spi.RegularGridInterpolator(
     (whys, exes),
-    100000 * invf.u,
+    1e12 * u,
     METHOD
 )
 
 
 interpolator_v = spi.RegularGridInterpolator(
     (whys, exes),
-    100000 * invf.v,
+    1e12 * v,
     METHOD
 )
 
