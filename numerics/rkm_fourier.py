@@ -16,8 +16,8 @@ Ny=100
 X, Y, exes, whys, psi_real, u, v, q, A_mag = invf.generate_rossby_field()
 t0 = 0.0
 
-x_range = (-500, 500)
-y_range = (-500, 500)
+x_range = (exes[0], exes[-1])
+y_range = (whys[0], whys[-1])
 # The differential equation that needs to be solved is
 # dx/dt = U(x(t), t) where U is the velocity field.
 # In `Inverse_fourier.py`, u and v are np arrays so
@@ -35,14 +35,14 @@ square_y = np.random.uniform(min(y_range), max(y_range), Ny)
 
 interpolator_u = spi.RegularGridInterpolator(
     (whys, exes),
-    1e12 * u,
+    1e11 * u,
     METHOD
 )
 
 
 interpolator_v = spi.RegularGridInterpolator(
     (whys, exes),
-    1e12 * v,
+    1e11 * v,
     METHOD
 )
 
