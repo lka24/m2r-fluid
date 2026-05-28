@@ -36,14 +36,14 @@ square_y = np.random.uniform(min(y_range), max(y_range), Ny)
 
 interpolator_u = spi.RegularGridInterpolator(
     (whys, exes),
-    1e11 * u,
+    1e12 * u,
     METHOD
 )
 
 
 interpolator_v = spi.RegularGridInterpolator(
     (whys, exes),
-    1e11 * v,
+    1e12 * v,
     METHOD
 )
 
@@ -114,5 +114,6 @@ ax2.text(
     verticalalignment='top',
     bbox=dict(facecolor='white', alpha=0.8)
 )
+ax2.set_aspect("equal")
 plt.savefig('rossby1.png', dpi=300)
 plt.show()
