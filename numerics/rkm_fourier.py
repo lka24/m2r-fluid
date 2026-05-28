@@ -6,18 +6,19 @@ import scipy.interpolate as spi
 import scipy.stats as sps
 
 # Module-level constants
-ITERS = 2000
-DT = 0.01
+ITERS = 1500
+DT = 0.01 #day
 ONLY_EPS = False
 METHOD = "cubic"
 Nx=100
 Ny=100
+Nplots=2
 # X values and y values, and starting time.
 X, Y, exes, whys, psi_real, u, v, q, A_mag = invf.generate_rossby_field()
 t0 = 0.0
 
-x_range = (-500, 500)
-y_range = (-500, 500)
+x_range = (exes[0], exes[-1]) #km
+y_range = (whys[0], whys[-1]) #km
 # The differential equation that needs to be solved is
 # dx/dt = U(x(t), t) where U is the velocity field.
 # In `Inverse_fourier.py`, u and v are np arrays so
@@ -27,7 +28,7 @@ y_range = (-500, 500)
 # sample = sampler.random(n=1000)
 # scaled_sample = sps.qmc.scale(sample, list(x_range), [75, 75])
 
-square_x = np.random.uniform(min(x_range), max(x_range), Nx)
+square_x = np.random.uniform(min(x_range), max(x_range), Nx) 
 square_y = np.random.uniform(min(y_range), max(y_range), Ny)
 
 # invf.u and invf.v are tiny. I will scale them up
@@ -94,14 +95,25 @@ for j in hists:
 
 epsilon = 2
 for j in range(len(periodichists)):
-    for offset_x in range(2):
-        for offset_y in range(2):
+    for offset_x in range(Nplots):
+        for offset_y in range(Nplots):
             for piece in periodichists[j]:
                 xs = offset_x * (x_range[1] - x_range[0] - epsilon) + np.array([r[1] for r in piece])
                 ys = offset_y * (y_range[1] - y_range[0]- epsilon) + np.array([r[2] for r in piece])
                 # ax1.plot(xs, ys, linewidth=0.75, color="blue")
                 if offset_x == 0 and offset_y == 0:
                     ax2.plot(xs, ys, linewidth=0.75, color="blue")
-
+ax2.set_xlabel("x (km)")
+ax2.set_ylabel("y (km)")
+ax2.text(
+    0.02,
+    0.98,
+    rf"$\Delta t = {DT}$ day" + "\n" + rf"Iterations = {ITERS}"+ "\n" + rf"Number of particles = {Nx}",
+    transform=ax2.transAxes,
+    fontsize=10,
+    verticalalignment='top',
+    bbox=dict(facecolor='white', alpha=0.8)
+)
+ax2.set_aspect("equal")
 plt.savefig('rossby1.png', dpi=300)
 plt.show()
