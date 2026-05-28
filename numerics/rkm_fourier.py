@@ -10,7 +10,8 @@ ITERS = 2000
 DT = 0.01
 ONLY_EPS = False
 METHOD = "cubic"
-
+Nx=100
+Ny=100
 # X values and y values, and starting time.
 X, Y, exes, whys, psi_real, u, v, q, A_mag = invf.generate_rossby_field()
 t0 = 0.0
@@ -26,8 +27,8 @@ y_range = (-500, 500)
 # sample = sampler.random(n=1000)
 # scaled_sample = sps.qmc.scale(sample, list(x_range), [75, 75])
 
-square_x = np.random.uniform(min(x_range), max(x_range), 100)
-square_y = np.random.uniform(min(y_range), max(y_range), 100)
+square_x = np.random.uniform(min(x_range), max(x_range), Nx)
+square_y = np.random.uniform(min(y_range), max(y_range), Ny)
 
 # invf.u and invf.v are tiny. I will scale them up
 # for the moment so that we can actually see movement
