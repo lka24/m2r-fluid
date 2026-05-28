@@ -6,7 +6,7 @@ import scipy.interpolate as spi
 import scipy.stats as sps
 
 # Module-level constants
-ITERS = 2000
+ITERS = 1500
 DT = 0.01 #day
 ONLY_EPS = False
 METHOD = "cubic"
