@@ -11,7 +11,8 @@ def generate_rossby_field(
     Ny=200,
     Lx=1e3,
     Ly=1e3,
-    given_phi=None
+    given_phi=None,
+    Rd=100
 ):
     np.random.seed(seed)
 
@@ -38,21 +39,38 @@ def generate_rossby_field(
     else:
         phi = given_phi
 
-    A = A_mag * np.exp(1j * phi)
+    # A = A_mag * np.exp(1j * phi)
+    A_raw = A_mag * np.exp(1j * phi)
 
-    omega = -beta * K / (q**2)
+    A = np.zeros_like(A_raw, dtype=complex)
+
+    for j in range(Ny):
+        for i in range(Nx):
+            jj = (-j) % Ny
+            ii = (-i) % Nx
+
+            if (j > jj) or (j == jj and i > ii):
+                continue
+
+            A[j, i] = A_raw[j, i]
+            A[jj, ii] = np.conj(A_raw[j, i])
+
+    A[0, 0] = 0.0
+
+    omega = -beta * K / ((q**2) + Rd**(-2))
 
     psi_hat = A * np.exp(-1j * omega * t)
     psi_hat[0, 0] = 0
 
-    psi = np.fft.ifft2(psi_hat)
-    psi_real = np.real(psi)
+    # psi = np.fft.ifft2(psi_hat)
+    # psi_real = np.real(psi)
+    psi_real = np.fft.ifft2(psi_hat).real
 
 
     u = -np.gradient(psi_real, dy, axis=0)
     v = np.gradient(psi_real, dx, axis=1)
 
-    return X, Y, x, y, psi_real, u, v, q, A_mag, A, omega
+    return X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi
 
 
 def average_velocity_magnitude(u, v):
@@ -128,7 +146,7 @@ def plot_rossby_field(
 
 
 if __name__ == "__main__":
-    X, Y, x, y, psi_real, u, v, q, A_mag = generate_rossby_field()
+    X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi = generate_rossby_field()
 
     plot_rossby_field(
         X,

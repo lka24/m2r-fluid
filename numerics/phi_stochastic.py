@@ -81,8 +81,6 @@ if __name__ == "__main__":
     #plt.savefig("phis.png", dpi=300)
     plt.show()
     
-    
-    ### NORMALITY THING ###
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(ncols=2, nrows=2)
     for i, axis in enumerate((ax1, ax2, ax3, ax4)):
         data = np.array(ptsbig[i])[:, 1]

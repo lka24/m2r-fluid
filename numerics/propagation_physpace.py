@@ -1,7 +1,11 @@
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from Inverse_fourier import generate_rossby_field
 from matplotlib.animation import FuncAnimation
+from IPython.display import HTML
+
+mpl.rcParams['animation.embed_limit'] = 200.0  # MB
 
 def animate_rossby_field(
     seed=123,
@@ -11,13 +15,15 @@ def animate_rossby_field(
     Ny=200,
     Lx=1e3,
     Ly=1e3,
+    given_phi=None,
     total_days=1000,
     n_frames=150,
     arrow_step=10,
     quiver_scale=0.7,
-    html_wanted=True
+    html_wanted=True,
+    Rd=100
 ):
-    X, Y, x, y, psi_real, u, v, q, A_mag, A, omega = generate_rossby_field(
+    X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi = generate_rossby_field(
         seed=seed,
         beta=beta,
         sigma=sigma,
@@ -25,7 +31,9 @@ def animate_rossby_field(
         Nx=Nx,
         Ny=Ny,
         Lx=Lx,
-        Ly=Ly
+        Ly=Ly,
+        given_phi=given_phi,
+        Rd=Rd
     )
 
     dx = x[1] - x[0]
@@ -87,7 +95,8 @@ def animate_rossby_field(
         psi_hat = A * np.exp(-1j * omega * t)
         psi_hat[0, 0] = 0
 
-        psi = np.real(np.fft.ifft2(psi_hat))
+        # psi = np.real(np.fft.ifft2(psi_hat))
+        psi = np.fft.ifft2(psi_hat).real
 
         u = -np.gradient(psi, dy, axis=0)
         v = np.gradient(psi, dx, axis=1)
@@ -112,10 +121,16 @@ def animate_rossby_field(
     )
 
     plt.tight_layout()
-    if html_wanted:
-        return HTML(anim.to_jshtml())
-    else:
-        anim.save("movie.gif")
+#     if html_wanted:
+#         return HTML(anim.to_jshtml())
+#     else:
+#         anim.save("movie.gif")
 
-animate_rossby_field()
+# animate_rossby_field()
 # animate_rossby_field(html_wanted=False)
+
+    plt.show()
+
+
+if __name__ == "__main__":
+    animate_rossby_field()
