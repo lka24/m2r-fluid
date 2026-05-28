@@ -102,6 +102,16 @@ for j in range(len(periodichists)):
                 # ax1.plot(xs, ys, linewidth=0.75, color="blue")
                 if offset_x == 0 and offset_y == 0:
                     ax2.plot(xs, ys, linewidth=0.75, color="blue")
-
+ax2.set_xlabel("x (km)")
+ax2.set_ylabel("y (km)")
+ax2.text(
+    0.02,
+    0.98,
+    rf"$\Delta t = {DT}$ day" + "\n" + rf"Iterations = {ITERS}"+ "\n" + rf"Number of particles = {Nx}",
+    transform=ax2.transAxes,
+    fontsize=10,
+    verticalalignment='top',
+    bbox=dict(facecolor='white', alpha=0.8)
+)
 plt.savefig('rossby1.png', dpi=300)
 plt.show()
