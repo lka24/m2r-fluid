@@ -156,7 +156,7 @@ list_psis = np.array(list_psis)
 
 laplacian_psi = np.gradient(np.gradient(list_psis, dx, axis=2), dx, axis=2) + np.gradient(np.gradient(list_psis, dy, axis=1), dy, axis=1)
 inner = laplacian_psi - list_psis/R**2
-result = np.gradient(inner, DT, axis=0) + list_vs*list_vs - list_us*list_us
+result = np.gradient(inner, DT, axis=0) + np.gradient(inner, dx, axis=2) *list_us + np.gradient(inner, dy, axis=1)*list_vs
 
 interpolator_res = sp.interpolate.RegularGridInterpolator(
     (np.arange(0, TIME, DT), np.linspace(0, sy, ny), np.linspace(0, sx, nx)),
@@ -176,18 +176,24 @@ for j in range(int(TIME/DT)):
 
 X, Y = np.meshgrid(np.linspace(0, sx, nx), np.linspace(0, sy, ny))
 
+
+plt.rcParams['text.usetex'] = True
+plt.rcParams['font.family'] = "serif"
+
 fig, (ax1, ax2) = plt.subplots(2)
 
+ax1.set_xlabel(r"$x$")
+ax1.set_ylabel(r"$y$")
+ax2.set_xlabel(r"$x$")
+ax2.set_ylabel(r"$y$")
 # example: plot solns[2]
 # need to remove 0 singularity.
 instant = np.copy(solns[2])
 instant[0][0] = 0
 
-# 3. Plot directly on the axis object and allow colors to extend past the bounds
 cf1 = ax1.contourf(X, Y, solns[2], levels=40, cmap="inferno", extend="both")
-cf2 = ax2.contourf(X, Y, list_psis[2], levels=40, cmap="inferno")
-# 4. Add a colorbar so you can actually read the field values
-fig.colorbar(cf1, ax=ax1)
-fig.colorbar(cf2, ax=ax2)
+cf2 = ax2.contourf(X, Y, list_psis[2], levels=40, cmap="inferno", extend="both")
+fig.colorbar(cf1, ax=ax1, label=r"Values of $\varphi$")
+fig.colorbar(cf2, ax=ax2, label=r"Values of $\psi$")
 
 plt.show()
