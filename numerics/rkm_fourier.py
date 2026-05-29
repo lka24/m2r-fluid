@@ -14,7 +14,7 @@ Nx=100
 Ny=100
 Nplots=2
 # X values and y values, and starting time.
-X, Y, exes, whys, psi_real, u, v, q, A_mag = invf.generate_rossby_field()
+X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi = invf.generate_rossby_field()
 t0 = 0.0
 
 x_range = (exes[0], exes[-1]) #km
