@@ -1,6 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+def make_hermitian(A_raw):
+    Ny, Nx = A_raw.shape
+    A_new = np.zeros_like(A_raw, dtype=complex)
+
+    for j in range(Ny):
+        for i in range(Nx):
+            jj = (-j) % Ny
+            ii = (-i) % Nx
+
+            if (j > jj) or (j == jj and i > ii):
+                continue
+
+            A_new[j, i] = A_raw[j, i]
+            A_new[jj, ii] = np.conj(A_raw[j, i])
+
+    A_new[0, 0] = 0.0
+    return A_new
 
 def generate_rossby_field(
     seed=123,
@@ -39,31 +56,14 @@ def generate_rossby_field(
     else:
         phi = given_phi
 
-    # A = A_mag * np.exp(1j * phi)
     A_raw = A_mag * np.exp(1j * phi)
-
-    A = np.zeros_like(A_raw, dtype=complex)
-
-    for j in range(Ny):
-        for i in range(Nx):
-            jj = (-j) % Ny
-            ii = (-i) % Nx
-
-            if (j > jj) or (j == jj and i > ii):
-                continue
-
-            A[j, i] = A_raw[j, i]
-            A[jj, ii] = np.conj(A_raw[j, i])
-
-    A[0, 0] = 0.0
+    A = make_hermitian(A_raw)
 
     omega = -beta * K / ((q**2) + Rd**(-2))
 
     psi_hat = A * np.exp(-1j * omega * t)
     psi_hat[0, 0] = 0
 
-    # psi = np.fft.ifft2(psi_hat)
-    # psi_real = np.real(psi)
     psi_real = np.fft.ifft2(psi_hat).real
 
 
