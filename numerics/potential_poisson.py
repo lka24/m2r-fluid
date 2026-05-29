@@ -2,28 +2,43 @@
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
+from Inverse_fourier import *
+from copy import deepcopy
 
 
 sx = 1000
 sy = 1000
 nx = 200
 ny = 200
+TIME = 10
+DT = 1
 
 # For a periodic Poisson problem we have \int_D f = 0
 # Furthermore the solution is not unique (additive const.
 # so we assume \int soln = 0 to fix this
 
-# The finite element method uses Green's first identity
-# to find that for \nabla^2 u = f,
-# \int \nabla u \cdot \nabla v = - \int fv
-# for test functions v.
-
 ##### Dividing nodes based on type.
 
 def solve(func, x_bd=sx, y_bd=sy, x_nodes=nx, y_nodes=ny):
-    dof_map = np.zeros(x_nodes * y_nodes, dtype=int)
-    step = 0
+    """Solve a Poisson problem nabla^2 u = f.
 
+    Args:
+        func (function): The inhomogeneous (RHS) term
+        x_bd (float, optional): a, where the x range is (0, a). Defaults to sx.
+        y_bd (float, optional): b, where the y range is (0, b). Defaults to sy.
+        x_nodes (int, optional): number of nodes in any given "x direction."
+        Defaults to nx.
+        y_nodes (int, optional): number of nodes in any given "y direction."
+        Defaults to ny.
+
+    Returns:
+        np.array: 2D numpy array consisting of the soln (rows->y, cols->x).
+
+    Notes:
+        The format is nabla^2 u = f, NOT nabla^2 u = -f.
+    """
+    line_map = np.zeros(x_nodes * y_nodes, dtype=int)
+    step = 0
 
     for y in range(y_nodes):
         for x in range(x_nodes):
@@ -32,24 +47,18 @@ def solve(func, x_bd=sx, y_bd=sy, x_nodes=nx, y_nodes=ny):
             if x ==  x_nodes-1 and y == y_nodes-1:
                 # Top right maps to bottom left.
                 maps_to = 0
-                dof_map[node_position] = dof_map[maps_to]
+                line_map[node_position] = line_map[maps_to]
             elif x == x_nodes-1:
                 # Right maps to left.
                 maps_to = y * x_nodes
-                dof_map[node_position] = dof_map[maps_to]
+                line_map[node_position] = line_map[maps_to]
             elif y == y_nodes-1:
                 # Up maps to down.
                 maps_to = x
-                dof_map[node_position] = dof_map[maps_to]
+                line_map[node_position] = line_map[maps_to]
             else:
-                dof_map[node_position] = step
+                line_map[node_position] = step
                 step += 1
-
-    exes, whys = np.meshgrid(
-        np.linspace(0, x_bd, x_nodes),
-        np.linspace(0, y_bd, y_nodes)
-    )
-
 
     elements = list()
     ##### Constructing the Finite ELemenets
@@ -72,7 +81,6 @@ def solve(func, x_bd=sx, y_bd=sy, x_nodes=nx, y_nodes=ny):
     stiffness_matrix = sp.sparse.lil_matrix((step, step))
     load_vct = np.zeros(step)
 
-
     def near_stiffness(constituents):
         return 1/6 * np.array([
             [4, -1, -2, -1],
@@ -83,6 +91,7 @@ def solve(func, x_bd=sx, y_bd=sy, x_nodes=nx, y_nodes=ny):
     # Standard result: see, e.g., 
 
     def near_load(constituents):
+        # Code assumes SQUARE elements.
         area = (x_bd/(x_nodes-1)) * (y_bd/(y_nodes-1))
         pts = []
         for j in constituents:
@@ -97,9 +106,8 @@ def solve(func, x_bd=sx, y_bd=sy, x_nodes=nx, y_nodes=ny):
         source_at_ctr = func(ctr_x, ctr_y)
         return source_at_ctr * area * (1/4) * np.array([1,1,1,1])
 
-
     for e in elements:
-        constituents = [dof_map[_] for _ in e]
+        constituents = [line_map[_] for _ in e]
         stiff_near = near_stiffness(constituents)
         load_near = near_load(e)
         
@@ -110,39 +118,31 @@ def solve(func, x_bd=sx, y_bd=sy, x_nodes=nx, y_nodes=ny):
                 key2 = constituents[k]
                 stiffness_matrix[key, key2] += stiff_near[j, k]
 
-
     # We must fix *something* as this equation's solutions
     # are not unique
     # Fix soln(0) = 0.
-
 
     stiffness_matrix[0, :] = 0.0
     stiffness_matrix[:, 0] = 0.0
     stiffness_matrix[0, 0] = 1.0
     load_vct[0] = 0.0
 
-
     stiffness_matrix = stiffness_matrix.tocsr()
-
 
     # Solve the eqn.
 
-
-    U = sp.sparse.linalg.spsolve(stiffness_matrix, load_vct)[dof_map]
+    U = sp.sparse.linalg.spsolve(stiffness_matrix, load_vct)[line_map]
     return U.reshape((y_nodes, x_nodes))
-    
 
 
-from Inverse_fourier import *
-
-TIME = 10
-DT = 1
 list_psis = []
 list_us = []
 list_vs = []
 for j in range(int(TIME/DT)):
     X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi = generate_rossby_field(t=j*DT)
     u, v, psi_real = u * 10**5, v * 10**5, psi_real * 10**5
+    # The quantities u, v, \psi appear to be incredibly tiny; thus, they need to
+    # be scaled up.
     list_us.append(u)
     list_vs.append(v)
     list_psis.append(psi_real)
@@ -176,24 +176,19 @@ for j in range(int(TIME/DT)):
 
 X, Y = np.meshgrid(np.linspace(0, sx, nx), np.linspace(0, sy, ny))
 
-
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = "serif"
 
-fig, (ax1, ax2) = plt.subplots(2)
-
-ax1.set_xlabel(r"$x$")
-ax1.set_ylabel(r"$y$")
-ax2.set_xlabel(r"$x$")
-ax2.set_ylabel(r"$y$")
 # example: plot solns[2]
 # need to remove 0 singularity.
-instant = np.copy(solns[2])
+fig, ax = plt.subplots()
+ax.set_xlabel(r"$x$")
+ax.set_ylabel(r"$y$")
+ax.set_title("Day 0")
+instant = deepcopy(solns[j])
 instant[0][0] = 0
-
-cf1 = ax1.contourf(X, Y, solns[2], levels=40, cmap="inferno", extend="both")
-cf2 = ax2.contourf(X, Y, list_psis[2], levels=40, cmap="inferno", extend="both")
-fig.colorbar(cf1, ax=ax1, label=r"Values of $\varphi$")
-fig.colorbar(cf2, ax=ax2, label=r"Values of $\psi$")
-
+cf1 = ax.contourf(X, Y, solns[j], levels=40, cmap="inferno", extend="both")
+# cf2 = ax2.contourf(X, Y, list_psis[2], levels=40, cmap="inferno", extend="both")
+fig.colorbar(cf1, ax=ax, label=r"Values of $\varphi$")
+# fig.colorbar(cf2, ax=ax2, label=r"Values of $\psi$")
 plt.show()
