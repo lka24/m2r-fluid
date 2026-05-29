@@ -1,6 +1,7 @@
 
 import numpy as np
 import scipy as sp
+import matplotlib.pyplot as plt
 
 
 sx = 1000
@@ -79,7 +80,7 @@ def solve(func, x_bd=sx, y_bd=sy, x_nodes=nx, y_nodes=ny):
             [-2, -1, 4, -1],
             [-1, -2, -1, 4]
             ])
-
+    # Standard result: see, e.g., 
 
     def near_load(constituents):
         area = (x_bd/(x_nodes-1)) * (y_bd/(y_nodes-1))
@@ -134,21 +135,59 @@ def solve(func, x_bd=sx, y_bd=sy, x_nodes=nx, y_nodes=ny):
 
 from Inverse_fourier import *
 
-X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi = generate_rossby_field()
+TIME = 10
+DT = 1
+list_psis = []
+list_us = []
+list_vs = []
+for j in range(int(TIME/DT)):
+    X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi = generate_rossby_field(t=j*DT)
+    u, v, psi_real = u * 10**5, v * 10**5, psi_real * 10**5
+    list_us.append(u)
+    list_vs.append(v)
+    list_psis.append(psi_real)
 
+R = 100
+dx = sx/nx
+dy = sy/ny
+list_us = np.array(list_us)
+list_vs = np.array(list_vs)
+list_psis = np.array(list_psis)
 
-interpolator_psi = sp.interpolate.RegularGridInterpolator(
-    (np.linspace(0, sy, ny), np.linspace(0,sx, nx)),
-    psi_real,
+laplacian_psi = np.gradient(np.gradient(list_psis, dx, axis=2), dx, axis=2) + np.gradient(np.gradient(list_psis, dy, axis=1), dy, axis=1)
+inner = laplacian_psi - list_psis/R**2
+result = np.gradient(inner, DT, axis=0) + list_vs*list_vs - list_us*list_us
+
+interpolator_res = sp.interpolate.RegularGridInterpolator(
+    (np.arange(0, TIME, DT), np.linspace(0, sy, ny), np.linspace(0, sx, nx)),
+    result,
     "cubic"
 )
 
-def psi_func(x,y):
-    return interpolator_psi([y,x]).squeeze()
+def res_func(t, x, y):
+    return interpolator_res([t, y, x]).squeeze()
 
+solns = []
 
-# TODO:
-# Compute D/Dt \left( \nabla^2 \psi - \frac{1}{R^2} \psi \right)
-# i.e.
-# (\partial_t + u \partial_x + v \partial_y) (...)
+for j in range(int(TIME/DT)):
+    def res(x,y):
+        return res_func(j, x, y)
+    solns.append(solve(res))
+
+X, Y = np.meshgrid(np.linspace(0, sx, nx), np.linspace(0, sy, ny))
+
+fig, (ax1, ax2) = plt.subplots(2)
+
+# example: plot solns[2]
+# need to remove 0 singularity.
+instant = np.copy(solns[2])
+instant[0][0] = 0
+
+# 3. Plot directly on the axis object and allow colors to extend past the bounds
+cf1 = ax1.contourf(X, Y, solns[2], levels=40, cmap="inferno", extend="both")
+cf2 = ax2.contourf(X, Y, list_psis[2], levels=40, cmap="inferno")
+# 4. Add a colorbar so you can actually read the field values
+fig.colorbar(cf1, ax=ax1)
+fig.colorbar(cf2, ax=ax2)
+
 plt.show()
