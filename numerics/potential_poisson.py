@@ -135,60 +135,65 @@ def solve(func, x_bd=sx, y_bd=sy, x_nodes=nx, y_nodes=ny):
     return U.reshape((y_nodes, x_nodes))
 
 
-list_psis = []
-list_us = []
-list_vs = []
-for j in range(int(TIME/DT)):
-    X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi = generate_rossby_field(t=j*DT)
-    u, v, psi_real = u * 10**5, v * 10**5, psi_real * 10**5
-    # The quantities u, v, \psi appear to be incredibly tiny; thus, they need to
-    # be scaled up.
-    list_us.append(u)
-    list_vs.append(v)
-    list_psis.append(psi_real)
+def calculate_rhs(psis, us, vs, R, dx=5.0, dy=5.0):
+    laplacian_psi = np.gradient(np.gradient(psis, dx, axis=2), dx, axis=2) + np.gradient(np.gradient(psis, dy, axis=1), dy, axis=1)
+    inner = laplacian_psi - psis/R**2
+    return np.gradient(inner, DT, axis=0) + np.gradient(inner, dx, axis=2) *us + np.gradient(inner, dy, axis=1)*vs
 
-R = 100
-dx = sx/nx
-dy = sy/ny
-list_us = np.array(list_us)
-list_vs = np.array(list_vs)
-list_psis = np.array(list_psis)
 
-laplacian_psi = np.gradient(np.gradient(list_psis, dx, axis=2), dx, axis=2) + np.gradient(np.gradient(list_psis, dy, axis=1), dy, axis=1)
-inner = laplacian_psi - list_psis/R**2
-result = np.gradient(inner, DT, axis=0) + np.gradient(inner, dx, axis=2) *list_us + np.gradient(inner, dy, axis=1)*list_vs
+if __name__ == "__main__":
+    list_psis = []
+    list_us = []
+    list_vs = []
+    for j in range(int(TIME/DT)):
+        X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi = generate_rossby_field(t=j*DT)
+        u, v, psi_real = u * 10**5, v * 10**5, psi_real * 10**5
+        # The quantities u, v, \psi appear to be incredibly tiny; thus, they need to
+        # be scaled up.
+        list_us.append(u)
+        list_vs.append(v)
+        list_psis.append(psi_real)
 
-interpolator_res = sp.interpolate.RegularGridInterpolator(
-    (np.arange(0, TIME, DT), np.linspace(0, sy, ny), np.linspace(0, sx, nx)),
-    result,
-    "cubic"
-)
+    R = 100
+    dx = sx/nx
+    dy = sy/ny
+    list_us = np.array(list_us)
+    list_vs = np.array(list_vs)
+    list_psis = np.array(list_psis)
 
-def res_func(t, x, y):
-    return interpolator_res([t, y, x]).squeeze()
+    result = calculate_rhs(list_psis, list_us, list_vs, R, dx=dx, dy=dy)
 
-solns = []
+    interpolator_res = sp.interpolate.RegularGridInterpolator(
+        (np.arange(0, TIME, DT), np.linspace(0, sy, ny), np.linspace(0, sx, nx)),
+        result,
+        "cubic"
+    )
 
-for j in range(int(TIME/DT)):
-    def res(x,y):
-        return res_func(j, x, y)
-    solns.append(solve(res))
+    def res_func(t, x, y):
+        return interpolator_res([t, y, x]).squeeze()
 
-X, Y = np.meshgrid(np.linspace(0, sx, nx), np.linspace(0, sy, ny))
+    solns = []
 
-plt.rcParams['text.usetex'] = True
-plt.rcParams['font.family'] = "serif"
+    for j in range(1):
+        def res(x,y):
+            return res_func(j, x, y)
+        solns.append(solve(res))
 
-# example: plot solns[2]
-# need to remove 0 singularity.
-fig, ax = plt.subplots()
-ax.set_xlabel(r"$x$")
-ax.set_ylabel(r"$y$")
-ax.set_title("Day 0")
-instant = deepcopy(solns[j])
-instant[0][0] = 0
-cf1 = ax.contourf(X, Y, solns[j], levels=40, cmap="inferno", extend="both")
-# cf2 = ax2.contourf(X, Y, list_psis[2], levels=40, cmap="inferno", extend="both")
-fig.colorbar(cf1, ax=ax, label=r"Values of $\varphi$")
-# fig.colorbar(cf2, ax=ax2, label=r"Values of $\psi$")
-plt.show()
+    X, Y = np.meshgrid(np.linspace(0, sx, nx), np.linspace(0, sy, ny))
+
+    plt.rcParams['text.usetex'] = True
+    plt.rcParams['font.family'] = "serif"
+
+    # example: plot solns[0]
+    # need to remove 0 singularity.
+    fig, ax = plt.subplots()
+    ax.set_xlabel(r"$x$ (km)")
+    ax.set_ylabel(r"$y$ (km)")
+    ax.set_title("Day 0")
+    # instant = deepcopy(solns[j])
+    # instant[0][0] = 0
+    # cf1 = ax.contourf(X, Y, solns[j], levels=40, cmap="inferno", extend="both")
+    cf2 = ax.contourf(X, Y, solns[0], levels=40, cmap="cividis", extend="both")
+    # fig.colorbar(cf1, ax=ax, label=r"Values of $\varphi$")
+    fig.colorbar(cf2, ax=ax, label=r"Values of $\varphi$")
+    plt.show()
