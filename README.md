@@ -4,21 +4,18 @@
 for the Rossby wave.
 
 `interpolation_test.py` tests the logic for plotting particle trajectories
-as they move according to
-$$ \frac{\mathrm{d}\vec{x}}{\mathrm{d}t} = \vec{u}(\vec{x}(t), t)$$
-using the Runge-Kutta method in `runge_kutta_multi.py`.
+as they move according to `dx/dt = u(x(t), t)` using the Runge-Kutta method in `runge_kutta_multi.py`.
 
 `Inverse_fourier.py` contains the logic for taking the inverse Fourier transform
 of the spectral representation of the Rossby wave and plotting the answer.
 
 `phi_stochastic.py` models the evolution of the wave phase $\Phi$ according
-to a Langevin-type stochastic process
-$$ \mathrm{d}\Phi = - \frac{\Phi}{T_{\text{mem}}} \mathrm{d}t + \mathrm{d}W $$
+to a Langevin-type stochastic process `dPhi = - Phi / Tmem  dt + dW`.
 
 `potential_poisson.py` uses the finite element method to
 solve a Poisson equation by which the velocity potential
-function $\varphi$ is obtained from the streamfunction
-$\psi$.
+function phi is obtained from the streamfunction
+psi.
 
 `propagation_physpace.py` animates the movement of
 Rossby waves.
