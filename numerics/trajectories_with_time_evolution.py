@@ -132,5 +132,22 @@ if PLOTTING == "2D":
     plt.show()
 
 elif PLOTTING == "3D":
-    raise NotImplementedError
-    # TODO: Implement 3D plotting
+    time_hist = np.array([step[0] for step in history])
+    x_hist = np.array([step[1] for step in history])
+    y_hist = np.array([step[2] for step in history])
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection="3d")
+
+    for i in range(x_hist.shape[1]):
+        ax.plot(
+            x_hist[:, i],
+            y_hist[:, i],
+            time_hist,
+            linewidth=0.5
+        )
+
+    ax.set_xlabel("x (km)")
+    ax.set_ylabel("y (km)")
+    ax.set_zlabel("time (day)")
+    plt.show()
