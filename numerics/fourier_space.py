@@ -65,6 +65,6 @@ for ax, (k,l) in zip(axes.flat, modes):
     ax.set_xlabel("x")
     ax.set_ylabel("y")
 
-plt.suptitle("Rossby Wave Modes with Complex Amplitude $A(k,l)$", fontsize=18)
+plt.suptitle("Stationary Fourier Modes with Complex Amplitude $A(k,l)$", fontsize=18)
 plt.tight_layout()
 plt.show()
