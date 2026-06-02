@@ -13,15 +13,15 @@ import scipy.stats as sps
 # from `rkm_fourier.py`.
 
 # Module-level constants
-ITERS = 100
+ITERS = 1000
 DT = 0.01 #day
 ONLY_EPS = False
-METHOD = "cubic"
-Nx=100
-Ny=100
+METHOD = "linear"
+Nx=1
+Ny=1
 Nplots=2
 t0 = 0.0
-PLOTTING = "2D"
+PLOTTING = "3D"
 
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested
@@ -37,6 +37,7 @@ for j in range(ITERS+1):
     u_arr.append(u)
     v_arr.append(v)
 
+np.random.seed(853)
 u_arr, v_arr = np.array(u_arr), np.array(v_arr)
 # times = np.linspace(t0, ITERS*DT, ITERS)
 times = np.array([t0 + j * DT for j in range(ITERS+1)])
@@ -144,12 +145,12 @@ elif PLOTTING == "3D":
             x_hist[:, i],
             y_hist[:, i],
             time_hist,
-            linewidth=0.5
+            linewidth=1
         )
 
     ax.set_xlabel("x (km)")
     ax.set_ylabel("y (km)")
     ax.set_zlabel("time (day)")
     ax.view_init(azim=90, elev=-90)
-    ax.set_zticks([])
+    #ax.set_zticks([])
     plt.show()

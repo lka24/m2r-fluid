@@ -147,7 +147,7 @@ if __name__ == "__main__":
     list_vs = []
     for j in range(int(TIME/DT)):
         X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = generate_rossby_field(t=j*DT)
-        u, v, psi_real = u * 10**5, v * 10**5, psi_real * 10**5
+        u, v, psi_real = u * 10**10, v * 10**10, psi_real * 10**10
         # The quantities u, v, \psi appear to be incredibly tiny; thus, they need to
         # be scaled up.
         list_us.append(u)
@@ -193,7 +193,10 @@ if __name__ == "__main__":
     # instant = deepcopy(solns[j])
     # instant[0][0] = 0
     # cf1 = ax.contourf(X, Y, solns[j], levels=40, cmap="inferno", extend="both")
-    cf2 = ax.contourf(X, Y, solns[0], levels=40, cmap="cividis", extend="both")
+    print([i for i in (j for j in solns[0])])
+    solnmax = max(np.abs(solns[0].flatten()).tolist())
+    solns[0] /= solnmax
     # fig.colorbar(cf1, ax=ax, label=r"Values of $\varphi$")
+    cf2 = ax.contourf(X, Y, solns[0], levels=40, cmap="cividis", extend="both")
     fig.colorbar(cf2, ax=ax, label=r"Values of $\varphi$")
     plt.show()
