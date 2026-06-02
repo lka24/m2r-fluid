@@ -31,7 +31,7 @@ u_arr = []
 v_arr = []
 phi = None
 for j in range(ITERS+1):
-    X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi = invf.generate_rossby_field(
+    X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
         t=j*DT, given_phi=phi 
     )
     u_arr.append(u)
@@ -150,4 +150,6 @@ elif PLOTTING == "3D":
     ax.set_xlabel("x (km)")
     ax.set_ylabel("y (km)")
     ax.set_zlabel("time (day)")
+    ax.view_init(azim=90, elev=-90)
+    ax.set_zticks([])
     plt.show()

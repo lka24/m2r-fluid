@@ -15,7 +15,7 @@ def plot_time_averaged_power_spectrum(
     n_frames=150,
     Rd=20
 ):
-    X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi = generate_rossby_field(
+    X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = generate_rossby_field(
         seed=seed,
         beta=beta,
         sigma=sigma,

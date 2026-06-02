@@ -146,7 +146,7 @@ if __name__ == "__main__":
     list_us = []
     list_vs = []
     for j in range(int(TIME/DT)):
-        X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi = generate_rossby_field(t=j*DT)
+        X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = generate_rossby_field(t=j*DT)
         u, v, psi_real = u * 10**5, v * 10**5, psi_real * 10**5
         # The quantities u, v, \psi appear to be incredibly tiny; thus, they need to
         # be scaled up.
