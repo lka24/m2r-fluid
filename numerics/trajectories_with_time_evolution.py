@@ -17,11 +17,13 @@ ITERS = 1000
 DT = 0.01 #day
 ONLY_EPS = False
 METHOD = "linear"
-Nx=1
-Ny=1
+Nx=100
+Ny=100
 Nplots=2
 t0 = 0.0
-PLOTTING = "3D"
+PLOTTING = "2D"
+DOTS = True
+SEED = np.random.randint(1, 10001)
 
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested
@@ -37,7 +39,7 @@ for j in range(ITERS+1):
     u_arr.append(u)
     v_arr.append(v)
 
-np.random.seed(853)
+np.random.seed(SEED)
 u_arr, v_arr = np.array(u_arr), np.array(v_arr)
 # times = np.linspace(t0, ITERS*DT, ITERS)
 times = np.array([t0 + j * DT for j in range(ITERS+1)])
@@ -58,9 +60,10 @@ interpolator_v = spi.RegularGridInterpolator(
 x_range = (exes[0], exes[-1]) #km
 y_range = (whys[0], whys[-1]) #km
 
-square_x = np.random.uniform(min(x_range), max(x_range), Nx) 
-square_y = np.random.uniform(min(y_range), max(y_range), Ny)
-
+# square_x = np.random.uniform(min(x_range), max(x_range), Nx) 
+square_x = np.linspace(min(x_range), max(x_range), Nx)
+# square_y = np.random.uniform(min(y_range), max(y_range), Ny)
+square_y = np.linspace(min(y_range), max(y_range), Ny)
 
 def wrapper_u(t, x, y):
     x = x_range[0] + np.mod(x - x_range[0], x_range[1] - x_range[0])
@@ -87,7 +90,7 @@ X2 = np.random.uniform(-10, 10, 1)
 
 history = rkm.runge_single(t0, np.array(square_x), np.array(square_y), wrapper_u, wrapper_v, ITERS, DT, ONLY_EPS)
 
-if PLOTTING == "2D":
+if PLOTTING == "2D" and not DOTS:
     fig, ax2 = plt.subplots()
     #ax.set_xlim(x_range[0], x_range[1])
     #ax.set_ylim(y_range[0], y_range[1])
@@ -116,7 +119,7 @@ if PLOTTING == "2D":
                     ys = offset_y * (y_range[1] - y_range[0]- epsilon) + np.array([r[2] for r in piece])
                     # ax1.plot(xs, ys, linewidth=0.75, color="blue")
                     if offset_x == 0 and offset_y == 0:
-                        ax2.plot(xs, ys, linewidth=0.75, color="blue")
+                        ax2.plot(xs, ys, linewidth=0.15, color="blue")
     ax2.set_xlabel("x (km)")
     ax2.set_ylabel("y (km)")
     ax2.text(
@@ -130,6 +133,38 @@ if PLOTTING == "2D":
     )
     ax2.set_aspect("equal")
     plt.savefig('rossby1.png', dpi=300)
+    plt.show()
+elif PLOTTING == "2D" and DOTS:
+    fig, ax = plt.subplots()
+    #ax.set_xlim(x_range[0], x_range[1])
+    #ax.set_ylim(y_range[0], y_range[1])
+
+    times = [step[0] for step in history]
+    X = np.array([j[1] for j in history])
+    Y = np.array([j[2] for j in history])
+    hists = []
+    for i in range(X.shape[1]):
+        x_particle = X[:, i]
+        y_particle = Y[:, i]
+        trajectory = list(zip(times, x_particle, y_particle))
+        hists.append(trajectory)
+
+    periodichists = []
+    for j in hists:
+        j = rkm.periodify(x_range, y_range, j)
+        periodichists.append(j)
+
+    epsilon = 2
+    frozen_points = list()
+    for j in range(len(periodichists)):
+        for piece in periodichists[j]:
+            frozen_points.append(piece[-1])
+
+    frozen_points = np.array(frozen_points)
+    tmax = max(frozen_points[:, 0])
+    frozen_points = frozen_points[frozen_points[:, 0] >= tmax - 1e-6]
+    plt.scatter(frozen_points[:, 1],
+                frozen_points[:, 2])
     plt.show()
 
 elif PLOTTING == "3D":
