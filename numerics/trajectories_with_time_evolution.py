@@ -32,13 +32,22 @@ STEP = 4
 # in.
 
 u_arr, v_arr = None, None
-phi = None
-phis = solve_stochastic_phi(days=int(ITERS*DT), dt=DT)
+phis = np.zeros((200,200), dtype=object)
 for j in range(ITERS+1):
+    if j != 0:
+        phi_now = np.zeros((200,200))
+        for r in range(200):
+            for q in range(200):
+                phi_now[r,q] = phis[r,q](j*DT)
+    else:
+        phi_now = phis
     X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
-        t=j*DT, given_phi=phis(j*DT) 
+        t=j*DT, given_phi=phi_now.astype(np.float64)
     )
     if u_arr is None:
+        for a in range(200):
+            for b in range(200):
+                phis[a,b] = solve_stochastic_phi(days=int(ITERS*DT), dt=DT)
         u_arr = np.empty((ITERS + 1, u.shape[0], u.shape[1]))
         v_arr = np.empty((ITERS + 1, v.shape[0], v.shape[1]))
     u_arr[j] = u
