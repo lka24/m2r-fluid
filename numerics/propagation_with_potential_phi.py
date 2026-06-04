@@ -169,6 +169,12 @@ def animate_rossby_potential_psi_velocity(
         ax.set_ylabel("y")
         ax.set_aspect("equal")
 
+    # set up to store the data after it's calculated in update function.
+    psi_history = np.zeros((n_frames, Ny, Nx))
+    potential_history = np.zeros((n_frames, Ny, Nx))
+    u_history = np.zeros((n_frames, Ny, Nx))
+    v_history = np.zeros((n_frames, Ny, Nx))
+
     def update(frame):
         nonlocal phi, psi_old, potential_norm
 
@@ -199,6 +205,12 @@ def animate_rossby_potential_psi_velocity(
 
         u = gamma * u_psi + (1 - gamma) * u_pot
         v = gamma * v_psi + (1 - gamma) * v_pot
+
+        # Store data for particle trajectories
+        psi_history[frame] = psi
+        potential_history[frame] = potential
+        u_history[frame] = u
+        v_history[frame] = v
 
         potential_norm = np.max(np.abs(potential))
         if potential_norm == 0:
@@ -232,9 +244,23 @@ def animate_rossby_potential_psi_velocity(
         blit=False,
     )
 
+    velocity_data = {
+        "times": times,
+        "x": x,
+        "y": y,
+        "X": X,
+        "Y": Y,
+        "psi": psi_history,
+        "potential": potential_history,
+        "u": u_history,
+        "v": v_history,
+        "dx": dx,
+        "dy": dy,
+    }
+
     # plt.close(fig)
     plt.tight_layout()
-    return anim
+    return anim, velocity_data
 
 
 # anim = animate_rossby_potential_psi_velocity(
@@ -250,5 +276,5 @@ def animate_rossby_potential_psi_velocity(
 
 
 if __name__ == "__main__":
-    animate_rossby_potential_psi_velocity()
+    anim, velocity_data = animate_rossby_potential_psi_velocity()
     plt.show()
