@@ -41,76 +41,76 @@ def solve_stochastic_phi(
 
     return phi_interpolated, points
 
+if __name__ == "__main__":
+    days = 100
+    dt = 0.1
+    time = 0
+    phi0 = 1
 
-days = 100
-dt = 0.1
-time = 0
-phi0 = 1
+    Tmem_values = [100.0, 10.0, 1.0, 0.1]
+    ptsbig = []
 
-Tmem_values = [100.0, 10.0, 1.0, 0.1]
-ptsbig = []
+    fig, axes = plt.subplots(4, 1, figsize=(8, 10))
 
-fig, axes = plt.subplots(4, 1, figsize=(8, 10))
+    for Tmem, axis in zip(Tmem_values, axes):
+        phiinterp, points = solve_stochastic_phi(
+            days=days,
+            Tmem=Tmem,
+            dt=dt,
+            starttime=time,
+            startphi=phi0,
+            interpolation_type=1,
+            give_points=True
+        )
 
-for Tmem, axis in zip(Tmem_values, axes):
-    phiinterp, points = solve_stochastic_phi(
-        days=days,
-        Tmem=Tmem,
-        dt=dt,
-        starttime=time,
-        startphi=phi0,
-        interpolation_type=1,
-        give_points=True
-    )
+        pts = np.linspace(points[0][0], points[-1][0], 1000)
 
-    pts = np.linspace(points[0][0], points[-1][0], 1000)
+        axis.plot(pts, phiinterp(pts))
+        axis.set_title(r"$T_{\mathrm{mem}}$" + f" = {Tmem}")
+        axis.set_xlabel("Time")
+        axis.set_ylabel(r"$\Phi$")
+        ptsbig.append(points)
 
-    axis.plot(pts, phiinterp(pts))
-    axis.set_title(r"$T_{\mathrm{mem}}$" + f" = {Tmem}")
-    axis.set_xlabel("Time")
-    axis.set_ylabel(r"$\Phi$")
-    ptsbig.append(points)
-
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
 
 
-fig, axes = plt.subplots(2, 2, figsize=(10, 8))
-axes = axes.ravel()
+    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    axes = axes.ravel()
 
-for i, axis in enumerate(axes):
-    data = np.array(ptsbig[i])[:, 1]
+    for i, axis in enumerate(axes):
+        data = np.array(ptsbig[i])[:, 1]
 
-    axis.ecdf(data, label="Empirical distribution")
+        axis.ecdf(data, label="Empirical distribution")
 
-    lp = np.percentile(data, 1)
-    up = np.percentile(data, 99)
+        lp = np.percentile(data, 1)
+        up = np.percentile(data, 99)
 
-    data_trimmed = data[(data > lp) & (data < up)]
+        data_trimmed = data[(data > lp) & (data < up)]
 
-    Tmem = Tmem_values[i]
+        Tmem = Tmem_values[i]
 
-    axis.set_title(
-        r"Empirical CDF of $\Phi$, "
-        + r"$T_{\mathrm{mem}} = "
-        + f"{Tmem}"
-        + r"$"
-    )
+        axis.set_title(
+            r"Empirical CDF of $\Phi$, "
+            + r"$T_{\mathrm{mem}} = "
+            + f"{Tmem}"
+            + r"$"
+        )
 
-    x = np.linspace(lp, up, 100)
-    y = sps.norm.cdf(
-        x,
-        loc=np.mean(data_trimmed),
-        scale=np.std(data_trimmed)
-    )
+        x = np.linspace(lp, up, 100)
+        y = sps.norm.cdf(
+            x,
+            loc=np.mean(data_trimmed),
+            scale=np.std(data_trimmed)
+        )
 
-    axis.plot(
-        x,
-        y,
-        label="Normal fitted CDF"
-    )
+        axis.plot(
+            x,
+            y,
+            label="Normal fitted CDF"
+        )
 
-    axis.legend()
+        axis.legend()
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()

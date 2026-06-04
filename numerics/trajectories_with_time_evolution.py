@@ -6,6 +6,7 @@ import Inverse_fourier as invf
 import numpy as np
 import scipy.interpolate as spi
 import scipy.stats as sps
+from phi_stochastic import solve_stochastic_phi
 
 
 
@@ -13,31 +14,46 @@ import scipy.stats as sps
 # from `rkm_fourier.py`.
 
 # Module-level constants
-ITERS = 1000
-DT = 0.01 #day
+ITERS = 100
+DT = 0.1 #day
 ONLY_EPS = False
-METHOD = "linear"
-Nx=1
-Ny=1
+METHOD = "cubic"
+Nx=31
+Ny=31
 Nplots=2
 t0 = 0.0
-PLOTTING = "3D"
+PLOTTING = "2D"
+DOTS = True
+SEED = np.random.randint(1, 10001)
+STEP = 4
 
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested
 # in.
 
-u_arr = []
-v_arr = []
-phi = None
+u_arr, v_arr = None, None
+phis = np.zeros((200,200), dtype=object)
 for j in range(ITERS+1):
+    if j != 0:
+        phi_now = np.zeros((200,200))
+        for r in range(200):
+            for q in range(200):
+                phi_now[r,q] = phis[r,q](j*DT)
+    else:
+        phi_now = phis
     X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
-        t=j*DT, given_phi=phi 
+        t=j*DT, given_phi=phi_now.astype(np.float64)
     )
-    u_arr.append(u)
-    v_arr.append(v)
+    if u_arr is None:
+        for a in range(200):
+            for b in range(200):
+                phis[a,b] = solve_stochastic_phi(days=int(ITERS*DT), dt=DT)
+        u_arr = np.empty((ITERS + 1, u.shape[0], u.shape[1]))
+        v_arr = np.empty((ITERS + 1, v.shape[0], v.shape[1]))
+    u_arr[j] = u
+    v_arr[j] = v
 
-np.random.seed(853)
+np.random.seed(SEED)
 u_arr, v_arr = np.array(u_arr), np.array(v_arr)
 # times = np.linspace(t0, ITERS*DT, ITERS)
 times = np.array([t0 + j * DT for j in range(ITERS+1)])
@@ -58,9 +74,9 @@ interpolator_v = spi.RegularGridInterpolator(
 x_range = (exes[0], exes[-1]) #km
 y_range = (whys[0], whys[-1]) #km
 
-square_x = np.random.uniform(min(x_range), max(x_range), Nx) 
-square_y = np.random.uniform(min(y_range), max(y_range), Ny)
-
+square_x = np.linspace(min(x_range), max(x_range), Nx)
+square_y = np.linspace(min(y_range), max(y_range), Ny)
+square_x, square_y = rkm.pointsquare(square_x, square_y)
 
 def wrapper_u(t, x, y):
     x = x_range[0] + np.mod(x - x_range[0], x_range[1] - x_range[0])
@@ -87,7 +103,7 @@ X2 = np.random.uniform(-10, 10, 1)
 
 history = rkm.runge_single(t0, np.array(square_x), np.array(square_y), wrapper_u, wrapper_v, ITERS, DT, ONLY_EPS)
 
-if PLOTTING == "2D":
+if PLOTTING == "2D" and not DOTS:
     fig, ax2 = plt.subplots()
     #ax.set_xlim(x_range[0], x_range[1])
     #ax.set_ylim(y_range[0], y_range[1])
@@ -116,7 +132,7 @@ if PLOTTING == "2D":
                     ys = offset_y * (y_range[1] - y_range[0]- epsilon) + np.array([r[2] for r in piece])
                     # ax1.plot(xs, ys, linewidth=0.75, color="blue")
                     if offset_x == 0 and offset_y == 0:
-                        ax2.plot(xs, ys, linewidth=0.75, color="blue")
+                        ax2.plot(xs, ys, linewidth=0.15, color="blue")
     ax2.set_xlabel("x (km)")
     ax2.set_ylabel("y (km)")
     ax2.text(
@@ -130,6 +146,17 @@ if PLOTTING == "2D":
     )
     ax2.set_aspect("equal")
     plt.savefig('rossby1.png', dpi=300)
+    plt.show()
+elif PLOTTING == "2D" and DOTS:
+    fig, ax = plt.subplots()
+    #ax.set_xlim(x_range[0], x_range[1])
+    #ax.set_ylim(y_range[0], y_range[1])
+
+    final_t, final_x, final_y = history[-1]
+    final_x = (final_x - min(exes)) % (max(exes) - min(exes)) + min(exes)
+    final_y = (final_y - min(whys)) % (max(whys) - min(whys)) + min(whys)
+
+    ax.scatter(final_x, final_y)
     plt.show()
 
 elif PLOTTING == "3D":

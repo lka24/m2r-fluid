@@ -129,18 +129,27 @@ def periodify(x_range, y_range, hist):
     prev_y = None
 
     for t, x, y in hist:
-
-        # wrap into box
         new_x = ((x - xmin) % lx_box) + xmin
         new_y = ((y - ymin) % ly_box) + ymin
 
-        # if jump is too large, it means crossing boundary
+    
         if prev_x is not None:
             if abs(new_x - prev_x) > lx_box / 2 or abs(new_y - prev_y) > ly_box / 2:
+                if abs(new_x - prev_x) > lx_box / 2:
+                    if new_x < prev_x:
+                        current_segment.append((t, xmax, new_y))
+                    else:
+                        current_segment.append((t, xmin, new_y))
+                elif abs(new_y - prev_y) > ly_box / 2:
+                        if new_y < prev_y:
+                            current_segment.append((t, new_x, ymax))
+                        else:
+                            current_segment.append((t, new_x, ymin))
+
                 if current_segment:
                     master.append(current_segment)
-                current_segment = []
 
+                current_segment = []
         current_segment.append((t, new_x, new_y))
 
         prev_x = new_x
@@ -150,6 +159,7 @@ def periodify(x_range, y_range, hist):
         master.append(current_segment)
 
     return master
+
 
 
 def pointsquare(xcoords, ycoords, split=True):
