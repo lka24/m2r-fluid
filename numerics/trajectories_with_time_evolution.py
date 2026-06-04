@@ -6,6 +6,7 @@ import Inverse_fourier as invf
 import numpy as np
 import scipy.interpolate as spi
 import scipy.stats as sps
+from phi_stochastic import solve_stochastic_phi
 
 
 
@@ -13,31 +14,35 @@ import scipy.stats as sps
 # from `rkm_fourier.py`.
 
 # Module-level constants
-ITERS = 1000
-DT = 0.01 #day
+ITERS = 100
+DT = 0.1 #day
 ONLY_EPS = False
-METHOD = "linear"
-Nx=100
-Ny=100
+METHOD = "cubic"
+Nx=10
+Ny=10
 Nplots=2
 t0 = 0.0
 PLOTTING = "2D"
 DOTS = True
 SEED = np.random.randint(1, 10001)
+STEP = 4
 
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested
 # in.
 
-u_arr = []
-v_arr = []
+u_arr, v_arr = None, None
 phi = None
+phis = solve_stochastic_phi(days=int(ITERS*DT), dt=DT)
 for j in range(ITERS+1):
     X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
-        t=j*DT, given_phi=phi 
+        t=j*DT, given_phi=phis(j*DT) 
     )
-    u_arr.append(u)
-    v_arr.append(v)
+    if u_arr is None:
+        u_arr = np.empty((ITERS + 1, u.shape[0], u.shape[1]))
+        v_arr = np.empty((ITERS + 1, v.shape[0], v.shape[1]))
+    u_arr[j] = u
+    v_arr[j] = v
 
 np.random.seed(SEED)
 u_arr, v_arr = np.array(u_arr), np.array(v_arr)
@@ -60,10 +65,9 @@ interpolator_v = spi.RegularGridInterpolator(
 x_range = (exes[0], exes[-1]) #km
 y_range = (whys[0], whys[-1]) #km
 
-# square_x = np.random.uniform(min(x_range), max(x_range), Nx) 
 square_x = np.linspace(min(x_range), max(x_range), Nx)
-# square_y = np.random.uniform(min(y_range), max(y_range), Ny)
 square_y = np.linspace(min(y_range), max(y_range), Ny)
+square_x, square_y = rkm.pointsquare(square_x, square_y)
 
 def wrapper_u(t, x, y):
     x = x_range[0] + np.mod(x - x_range[0], x_range[1] - x_range[0])
@@ -139,7 +143,7 @@ elif PLOTTING == "2D" and DOTS:
     #ax.set_xlim(x_range[0], x_range[1])
     #ax.set_ylim(y_range[0], y_range[1])
 
-    times = [step[0] for step in history]
+    times = [j[0] for j in history]
     X = np.array([j[1] for j in history])
     Y = np.array([j[2] for j in history])
     hists = []
