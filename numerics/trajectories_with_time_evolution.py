@@ -18,8 +18,8 @@ ITERS = 100
 DT = 0.1 #day
 ONLY_EPS = False
 METHOD = "cubic"
-Nx=10
-Ny=10
+Nx=31
+Ny=31
 Nplots=2
 t0 = 0.0
 PLOTTING = "2D"
@@ -143,32 +143,11 @@ elif PLOTTING == "2D" and DOTS:
     #ax.set_xlim(x_range[0], x_range[1])
     #ax.set_ylim(y_range[0], y_range[1])
 
-    times = [j[0] for j in history]
-    X = np.array([j[1] for j in history])
-    Y = np.array([j[2] for j in history])
-    hists = []
-    for i in range(X.shape[1]):
-        x_particle = X[:, i]
-        y_particle = Y[:, i]
-        trajectory = list(zip(times, x_particle, y_particle))
-        hists.append(trajectory)
+    final_t, final_x, final_y = history[-1]
+    final_x = (final_x - min(exes)) % (max(exes) - min(exes)) + min(exes)
+    final_y = (final_y - min(whys)) % (max(whys) - min(whys)) + min(whys)
 
-    periodichists = []
-    for j in hists:
-        j = rkm.periodify(x_range, y_range, j)
-        periodichists.append(j)
-
-    epsilon = 2
-    frozen_points = list()
-    for j in range(len(periodichists)):
-        for piece in periodichists[j]:
-            frozen_points.append(piece[-1])
-
-    frozen_points = np.array(frozen_points)
-    tmax = max(frozen_points[:, 0])
-    frozen_points = frozen_points[frozen_points[:, 0] >= tmax - 1e-6]
-    plt.scatter(frozen_points[:, 1],
-                frozen_points[:, 2])
+    ax.scatter(final_x, final_y)
     plt.show()
 
 elif PLOTTING == "3D":
