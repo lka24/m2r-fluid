@@ -181,3 +181,33 @@ elif PLOTTING == "3D":
     ax.view_init(azim=90, elev=-90)
     #ax.set_zticks([])
     plt.show()
+elif PLOTTING == "ANIMATION" and DOTS:
+    from matplotlib.animation import FuncAnimation
+    time_hist = np.array([step[0] for step in history])
+    x_hist = np.array([step[1] for step in history])
+    y_hist = np.array([step[2] for step in history])
+    xmin, xmax = x_range
+    ymin, ymax = y_range
+    lx_box = xmax - xmin
+    ly_box = ymax - ymin
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    scat = ax.scatter([], [], s=5)
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
+    ax.set_aspect("equal")
+    ax.set_xlabel("x (km)")
+    ax.set_ylabel("y (km)")
+
+    title = ax.set_title("")
+
+    def update(frame):
+        x_now = x_hist[frame]
+        y_now = y_hist[frame]
+        x_now = ((x_now - xmin) % lx_box) + xmin
+        y_now = ((y_now - ymin) % ly_box) + ymin
+        scat.set_offsets(np.column_stack((x_now, y_now)))
+        title.set_text(f"Particle positions at t = {time_hist[frame]:.2f} days")
+        return scat, title
+    ani = FuncAnimation(fig,update，frames=len(time_hist),interval=80,blit=False)
+    plt.show()
