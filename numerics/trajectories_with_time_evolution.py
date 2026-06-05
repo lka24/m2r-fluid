@@ -208,7 +208,7 @@ elif PLOTTING == "ANIMATION" and DOTS:
         scat.set_offsets(np.column_stack((x_now, y_now)))
         title.set_text(f"Particle positions at t = {time_hist[frame]:.2f} days")
         return scat, title
-    ani = FuncAnimation(fig,update，frames=len(time_hist),interval=80,blit=False)
+    ani = FuncAnimation(fig,update,frames=len(time_hist),interval=80,blit=False)
     plt.show()
 
 elif PLOTTING == "ANIMATION" and not DOTS:
