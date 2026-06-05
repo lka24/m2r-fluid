@@ -35,16 +35,10 @@ u_arr, v_arr = None, None
 phis = pstoch.vector_solve_stochastic_phi(days=int(ITERS*DT), size=(200,200), dt=DT)
 if GAMMA==0:
     for j in range(ITERS+1):
-    phi_now = phis[j]
-    if GAMMA == 0:
+        phi_now = phis[j]
+
         X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
         t=j*DT, given_phi=phi_now.astype(np.float64)
-    )
-    else:
-        X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invfg.generate_rossby_field(
-        t=j * DT,
-        given_phi=phi_now.astype(np.float64),
-        gamma=GAMMA
     )
     if u_arr is None:
         u_arr = np.memmap('u_cache.dat', dtype=np.float32, mode='w+', shape=(ITERS + 1, u.shape[0], u.shape[1]))
