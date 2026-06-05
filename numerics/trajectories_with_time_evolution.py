@@ -7,7 +7,7 @@ import numpy as np
 import scipy.interpolate as spi
 import scipy.stats as sps
 from phi_stochastic import solve_stochastic_phi
-
+from matplotlib.animation import FuncAnimation
 
 
 # The process is basically the same, so we copy a lot of code
@@ -149,8 +149,7 @@ if PLOTTING == "2D" and not DOTS:
     plt.show()
 elif PLOTTING == "2D" and DOTS:
     fig, ax = plt.subplots()
-    #ax.set_xlim(x_range[0], x_range[1])
-    #ax.set_ylim(y_range[0], y_range[1])
+   
 
     final_t, final_x, final_y = history[-1]
     final_x = (final_x - min(exes)) % (max(exes) - min(exes)) + min(exes)
@@ -180,4 +179,101 @@ elif PLOTTING == "3D":
     ax.set_zlabel("time (day)")
     ax.view_init(azim=90, elev=-90)
     #ax.set_zticks([])
+    plt.show()
+    
+elif PLOTTING == "ANIMATION" and DOTS:
+    time_hist = np.array([step[0] for step in history])
+    x_hist = np.array([step[1] for step in history])
+    y_hist = np.array([step[2] for step in history])
+    xmin, xmax = x_range
+    ymin, ymax = y_range
+    lx_box = xmax - xmin
+    ly_box = ymax - ymin
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    scat = ax.scatter([], [], s=5)
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
+    ax.set_aspect("equal")
+    ax.set_xlabel("x (km)")
+    ax.set_ylabel("y (km)")
+
+    title = ax.set_title("")
+
+    def update(frame):
+        x_now = x_hist[frame]
+        y_now = y_hist[frame]
+        x_now = ((x_now - xmin) % lx_box) + xmin
+        y_now = ((y_now - ymin) % ly_box) + ymin
+        scat.set_offsets(np.column_stack((x_now, y_now)))
+        title.set_text(f"Particle positions at t = {time_hist[frame]:.2f} days")
+        return scat, title
+    ani = FuncAnimation(fig,update，frames=len(time_hist),interval=80,blit=False)
+    plt.show()
+
+elif PLOTTING == "ANIMATION" and not DOTS:
+    times = [step[0] for step in history]
+    X = np.array([step[1] for step in history])
+    Y = np.array([step[2] for step in history])
+
+    hists = []
+    for i in range(X.shape[1]):
+        x_particle = X[:, i]
+        y_particle = Y[:, i]
+        trajectory = list(zip(times, x_particle, y_particle))
+        hists.append(trajectory)
+
+    periodichists = []
+    for h in hists:
+        periodichists.append(rkm.periodify(x_range, y_range, h))
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+
+    ax.set_xlim(x_range[0], x_range[1])
+    ax.set_ylim(y_range[0], y_range[1])
+    ax.set_aspect("equal")
+    ax.set_xlabel("x (km)")
+    ax.set_ylabel("y (km)")
+
+    title = ax.set_title("")
+
+    lines = []
+    for particle in periodichists:
+        particle_lines = []
+        for piece in particle:
+            line, = ax.plot([], [], linewidth=0.5)
+            particle_lines.append(line)
+        lines.append(particle_lines)
+
+    def update(frame):
+        current_t = times[frame]
+        for particle_index, particle in enumerate(periodichists):
+            for piece_index, piece in enumerate(particle):
+
+                xs = []
+                ys = []
+
+                for t, x, y in piece:
+                    if t <= current_t:
+                        xs.append(x)
+                        ys.append(y)
+
+                lines[particle_index][piece_index].set_data(xs, ys)
+
+        title.set_text(f"t = {current_t:.2f} days")
+
+        all_lines = []
+        for particle_lines in lines:
+            for line in particle_lines:
+                all_lines.append(line)
+
+        return all_lines + [title]
+    ani = FuncAnimation(
+        fig,
+        update,
+        frames=len(times),
+        interval=80,
+        blit=False
+    )
+
     plt.show()
