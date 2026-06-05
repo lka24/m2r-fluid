@@ -73,40 +73,40 @@ def generate_rossby_field(
     return X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi, dx, dy, K, L
 
 
-def pregenerate(seed,
-                Lx,
-                Ly,
-                Nx,
-                Ny,
-                sigma,
-                beta=1.728e-3,
-                t=0.0,
-                given_phi=None,
-                Rd=100
-                ):
-    np.random.seed(seed)
+# def pregenerate(seed,
+#                 Lx,
+#                 Ly,
+#                 Nx,
+#                 Ny,
+#                 sigma,
+#                 beta=1.728e-3,
+#                 t=0.0,
+#                 given_phi=None,
+#                 Rd=100
+#                 ):
+#     np.random.seed(seed)
 
-    x = np.linspace(-Lx/2, Lx/2, Nx)
-    y = np.linspace(-Ly/2, Ly/2, Ny)
+#     x = np.linspace(-Lx/2, Lx/2, Nx)
+#     y = np.linspace(-Ly/2, Ly/2, Ny)
 
-    X, Y = np.meshgrid(x, y)
+#     X, Y = np.meshgrid(x, y)
 
-    dx = x[1] - x[0]
-    dy = y[1] - y[0]
+#     dx = x[1] - x[0]
+#     dy = y[1] - y[0]
 
-    k_vals = 2 * np.pi * np.fft.fftfreq(Nx, d=dx)
-    l_vals = 2 * np.pi * np.fft.fftfreq(Ny, d=dy)
+#     k_vals = 2 * np.pi * np.fft.fftfreq(Nx, d=dx)
+#     l_vals = 2 * np.pi * np.fft.fftfreq(Ny, d=dy)
 
-    K, L = np.meshgrid(k_vals, l_vals)
+#     K, L = np.meshgrid(k_vals, l_vals)
 
-    q = np.sqrt(K**2 + L**2)
-    q[0, 0] = 1e-10
+#     q = np.sqrt(K**2 + L**2)
+#     q[0, 0] = 1e-10
 
-    A_mag = q**2 * np.exp(-(q**2) / (2 * sigma**2))
-    return A_mag
+#     A_mag = q**2 * np.exp(-(q**2) / (2 * sigma**2))
+#     return A_mag
 
 
-def rossby_generation_step(t, psi,)
+# def rossby_generation_step(t, psi,)
 
 def average_velocity_magnitude(u, v):
     return np.mean(np.sqrt(u**2 + v**2))
