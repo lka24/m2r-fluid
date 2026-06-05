@@ -8,7 +8,7 @@ import scipy.interpolate as spi
 import scipy.stats as sps
 import phi_stochastic as pstoch
 from matplotlib.animation import FuncAnimation
-import inverse_fourier_with_gamma as invfg
+from propagation_with_potential_phi import solve_potential_from_material_derivative
 
 # The process is basically the same, so we copy a lot of code
 # from `rkm_fourier.py`.
@@ -26,15 +26,25 @@ PLOTTING = "2D"
 DOTS = True
 SEED = np.random.randint(1, 10001)
 SCALE_FACTOR = 1e10
-GAMMA = 0
+GAMMA = 0.3
+
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested
 # in.
 
 u_arr, v_arr = None, None
+old_psi = None
 phis = pstoch.vector_solve_stochastic_phi(days=int(ITERS*DT), size=(200,200), dt=DT)
 if GAMMA==0:
     for j in range(ITERS+1):
+    X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, dX, dY, kay, ell = invf.generate_rossby_field(
+        t=j*DT, given_phi=phi_now.astype(np.float64)
+    )
+    if old_psi is None:
+        old_psi = psi_real
+    if GAMMA != 0:
+        pot = solve_potential_from_material_derivative(psi_real, old_psi, dt=DT, dx=dX, dy=dY, K=kay, L=ell, Rd=100)
+        u, v = GAMMA * np.gradient(pot, dX, axis=1) + (1-GAMMA)*u, GAMMA * np.gradient(pot, dY, axis=0) + (1-GAMMA)*v
         phi_now = phis[j]
 
         X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
@@ -45,38 +55,22 @@ if GAMMA==0:
         v_arr = np.memmap('v_cache.dat', dtype=np.float32, mode='w+', shape=(ITERS + 1, v.shape[0], v.shape[1]))
     u_arr[j] = u
     v_arr[j] = v
-else:
-    X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
-        t=0
-    )
-    sx = exes[-1] - exes[0]
-    sy = whys[-1] - whys[0]
-    u_arr, v_arr = invfg.general_rossby_velocity(
-        gamma=GAMMA,
-        TIME=ITERS*DT,
-        DT=DT,
-        sx= exes[-1] - exes[0],
-        sy= whys[-1] - whys[0],
-        nx=len(exes),
-        ny=len(whys)
-    )
-    u_arr = np.array(u_arr)
-    v_arr = np.array(v_arr)
+    old_psi = psi_real
 
 np.random.seed(SEED)
-u_arr, v_arr = np.array(u_arr), np.array(v_arr)
+# u_arr, v_arr = np.array(u_arr), np.array(v_arr)
 # times = np.linspace(t0, ITERS*DT, ITERS)
 times = np.array([t0 + j * DT for j in range(ITERS+1)])
 interpolator_u = spi.RegularGridInterpolator(
     (times, whys, exes),
-    SCALE_FACTOR * u_arr,
+    u_arr,
     METHOD
 )
 
 
 interpolator_v = spi.RegularGridInterpolator(
     (times, whys, exes),
-    SCALE_FACTOR * v_arr,
+    v_arr,
     METHOD
 )
 
@@ -95,7 +89,7 @@ def wrapper_u(t, x, y):
         t =  ITERS * DT + t0
     pts = np.column_stack((y,x))
     pts = np.insert(pts, 0, np.ones(len(x)) * t, axis=1)
-    return interpolator_u(pts).squeeze()
+    return interpolator_u(pts).squeeze() * SCALE_FACTOR
 
 
 def wrapper_v(t, x, y):
@@ -105,7 +99,7 @@ def wrapper_v(t, x, y):
         t =  ITERS * DT + t0
     pts = np.column_stack((y,x))
     pts = np.insert(pts, 0, np.ones(len(x)) * t, axis=1)
-    return interpolator_v(pts).squeeze()
+    return interpolator_v(pts).squeeze() * SCALE_FACTOR
 
 
 X1 = np.random.uniform(-10, 10, 1)[0]
