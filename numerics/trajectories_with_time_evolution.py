@@ -8,7 +8,7 @@ import scipy.interpolate as spi
 import scipy.stats as sps
 import phi_stochastic as pstoch
 from matplotlib.animation import FuncAnimation
-
+import inverse_fourier_with_gamma as invfg
 
 # The process is basically the same, so we copy a lot of code
 # from `rkm_fourier.py`.
