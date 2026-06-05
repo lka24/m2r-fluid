@@ -26,12 +26,8 @@ PLOTTING = "2D"
 DOTS = True
 SEED = np.random.randint(1, 10001)
 SCALE_FACTOR = 1e10
-<<<<<<< Updated upstream
-GAMMA = 0
-=======
 GAMMA = 0.3
 
->>>>>>> Stashed changes
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested
 # in.
@@ -41,19 +37,6 @@ old_psi = None
 phis = pstoch.vector_solve_stochastic_phi(days=int(ITERS*DT), size=(200,200), dt=DT)
 if GAMMA==0:
     for j in range(ITERS+1):
-    phi_now = phis[j]
-<<<<<<< Updated upstream
-    if GAMMA == 0:
-        X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
-        t=j*DT, given_phi=phi_now.astype(np.float64)
-    )
-    else:
-        X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invfg.generate_rossby_field(
-        t=j * DT,
-        given_phi=phi_now.astype(np.float64),
-        gamma=GAMMA
-    )
-=======
     X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, dX, dY, kay, ell = invf.generate_rossby_field(
         t=j*DT, given_phi=phi_now.astype(np.float64)
     )
@@ -62,33 +45,17 @@ if GAMMA==0:
     if GAMMA != 0:
         pot = solve_potential_from_material_derivative(psi_real, old_psi, dt=DT, dx=dX, dy=dY, K=kay, L=ell, Rd=100)
         u, v = GAMMA * np.gradient(pot, dX, axis=1) + (1-GAMMA)*u, GAMMA * np.gradient(pot, dY, axis=0) + (1-GAMMA)*v
->>>>>>> Stashed changes
+        phi_now = phis[j]
+
+        X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
+        t=j*DT, given_phi=phi_now.astype(np.float64)
+    )
     if u_arr is None:
         u_arr = np.memmap('u_cache.dat', dtype=np.float32, mode='w+', shape=(ITERS + 1, u.shape[0], u.shape[1]))
         v_arr = np.memmap('v_cache.dat', dtype=np.float32, mode='w+', shape=(ITERS + 1, v.shape[0], v.shape[1]))
     u_arr[j] = u
     v_arr[j] = v
-<<<<<<< Updated upstream
-else:
-    X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
-        t=0
-    )
-    sx = exes[-1] - exes[0]
-    sy = whys[-1] - whys[0]
-    u_arr, v_arr = invfg.general_rossby_velocity(
-        gamma=GAMMA,
-        TIME=ITERS*DT,
-        DT=DT,
-        sx= exes[-1] - exes[0],
-        sy= whys[-1] - whys[0],
-        nx=len(exes),
-        ny=len(whys)
-    )
-    u_arr = np.array(u_arr)
-    v_arr = np.array(v_arr)
-=======
     old_psi = psi_real
->>>>>>> Stashed changes
 
 np.random.seed(SEED)
 # u_arr, v_arr = np.array(u_arr), np.array(v_arr)
