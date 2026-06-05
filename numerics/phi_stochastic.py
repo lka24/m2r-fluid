@@ -41,6 +41,22 @@ def solve_stochastic_phi(
 
     return phi_interpolated, points
 
+
+def vector_solve_stochastic_phi(
+    days=100,
+    Tmem=100,
+    dt=0.1,
+    size=(200,200),
+    startphi=1,
+):
+    phis = np.empty((int(days/dt)+1, *size))
+    phis[0] = startphi
+    dWs = np.random.normal(0, np.sqrt(dt), size=(int(days/dt), *size))
+    for j in range(int(days/dt)):
+        phis[j] = phis[j-1] - (phis[j-1] / Tmem) * dt + dWs[j]
+    return phis
+
+
 if __name__ == "__main__":
     days = 100
     dt = 0.1

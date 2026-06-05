@@ -6,7 +6,7 @@ import Inverse_fourier as invf
 import numpy as np
 import scipy.interpolate as spi
 import scipy.stats as sps
-from phi_stochastic import solve_stochastic_phi
+import phi_stochastic as pstoch
 from matplotlib.animation import FuncAnimation
 
 
@@ -14,10 +14,10 @@ from matplotlib.animation import FuncAnimation
 # from `rkm_fourier.py`.
 
 # Module-level constants
-ITERS = 100
+ITERS = 1000
 DT = 0.1 #day
 ONLY_EPS = False
-METHOD = "cubic"
+METHOD = "linear"
 Nx=31
 Ny=31
 Nplots=2
@@ -25,31 +25,22 @@ t0 = 0.0
 PLOTTING = "2D"
 DOTS = True
 SEED = np.random.randint(1, 10001)
-STEP = 4
+SCALE_FACTOR = 1e10
 
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested
 # in.
 
 u_arr, v_arr = None, None
-phis = np.zeros((200,200), dtype=object)
+phis = pstoch.vector_solve_stochastic_phi(days=int(ITERS*DT), size=(200,200), dt=DT)
 for j in range(ITERS+1):
-    if j != 0:
-        phi_now = np.zeros((200,200))
-        for r in range(200):
-            for q in range(200):
-                phi_now[r,q] = phis[r,q](j*DT)
-    else:
-        phi_now = phis
+    phi_now = phis[j]
     X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
         t=j*DT, given_phi=phi_now.astype(np.float64)
     )
     if u_arr is None:
-        for a in range(200):
-            for b in range(200):
-                phis[a,b] = solve_stochastic_phi(days=int(ITERS*DT), dt=DT)
-        u_arr = np.empty((ITERS + 1, u.shape[0], u.shape[1]))
-        v_arr = np.empty((ITERS + 1, v.shape[0], v.shape[1]))
+        u_arr = np.memmap('u_cache.dat', dtype=np.float32, mode='w+', shape=(ITERS + 1, u.shape[0], u.shape[1]))
+        v_arr = np.memmap('v_cache.dat', dtype=np.float32, mode='w+', shape=(ITERS + 1, v.shape[0], v.shape[1]))
     u_arr[j] = u
     v_arr[j] = v
 
@@ -59,14 +50,14 @@ u_arr, v_arr = np.array(u_arr), np.array(v_arr)
 times = np.array([t0 + j * DT for j in range(ITERS+1)])
 interpolator_u = spi.RegularGridInterpolator(
     (times, whys, exes),
-    1e12 * u_arr,
+    SCALE_FACTOR * u_arr,
     METHOD
 )
 
 
 interpolator_v = spi.RegularGridInterpolator(
     (times, whys, exes),
-    1e12 * v_arr,
+    SCALE_FACTOR * v_arr,
     METHOD
 )
 
@@ -157,6 +148,7 @@ elif PLOTTING == "2D" and DOTS:
 
     ax.scatter(final_x, final_y)
     plt.show()
+    print(u_arr)
 
 elif PLOTTING == "3D":
     time_hist = np.array([step[0] for step in history])
@@ -208,7 +200,7 @@ elif PLOTTING == "ANIMATION" and DOTS:
         scat.set_offsets(np.column_stack((x_now, y_now)))
         title.set_text(f"Particle positions at t = {time_hist[frame]:.2f} days")
         return scat, title
-    ani = FuncAnimation(fig,update，frames=len(time_hist),interval=80,blit=False)
+    ani = FuncAnimation(fig,update,frames=len(time_hist),interval=80,blit=False)
     plt.show()
 
 elif PLOTTING == "ANIMATION" and not DOTS:
