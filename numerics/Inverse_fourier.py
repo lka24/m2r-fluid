@@ -25,6 +25,98 @@ def average_velocity_magnitude(u, v):
     return np.mean(np.sqrt(u**2 + v**2))
 
 
+def init_rossby(
+    seed=123,
+    beta=1.728e-3,
+    sigma=0.02,
+    Nx=200,
+    Ny=200,
+    Lx=1e3,
+    Ly=1e3,
+    Rd=100,
+):
+    x = np.linspace(-Lx / 2, Lx / 2, Nx)
+    y = np.linspace(-Ly / 2, Ly / 2, Ny)
+    X, Y = np.meshgrid(x, y)
+
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+
+    k_vals = 2 * np.pi * np.fft.fftfreq(Nx, d=dx)
+    l_vals = 2 * np.pi * np.fft.fftfreq(Ny, d=dy)
+    K, L = np.meshgrid(k_vals, l_vals)
+
+    q = np.sqrt(K**2 + L**2)
+    q[0, 0] = 1e-10
+
+    A_base = q**2 * np.exp(-(q**2) / (2 * sigma**2))
+    omega = -beta * K / (q**2 + Rd**(-2))
+    return X, Y, x, y, omega, A_base, dx, dy, q, K, L
+
+def generate_rossby_field_2(
+    X,
+    Y,
+    x,
+    y,
+    q,
+    omega,
+    A_base,
+    dx,
+    dy,
+    K,
+    L,
+    t=0.0,
+    Nx=200,
+    Ny=200,
+    given_phi=None,
+    target_speed=20.0   # km/day, about 0.23 m/s
+):
+    if given_phi is None:
+        phi = np.random.uniform(0, 2 * np.pi, size=(Ny, Nx))
+    else:
+        phi = given_phi
+    # Compute unscaled velocity first
+    A_raw_base = A_base * np.exp(1j * phi)
+    A_base_hermitian = make_hermitian(A_raw_base)
+
+    psi_hat_base = A_base_hermitian * np.exp(-1j * omega * t)
+    psi_hat_base[0, 0] = 0
+    
+    # differentiation in foureir space corresponds to
+    # multiplication by i * fourier variable,
+    # which will be k or l.
+    # u = - psi_y, v = psi_x
+    u_hat = -1j * L * psi_hat_base
+    v_hat = 1j * K * psi_hat_base
+
+    # psi_base = np.fft.ifft2(psi_hat_base).real
+
+    # u_base = -np.gradient(psi_base, dy, axis=0)
+    # v_base = np.gradient(psi_base, dx, axis=1)
+    u_base = np.fft.ifft2(u_hat).real
+    v_base = np.fft.ifft2(v_hat).real
+    current_speed = average_velocity_magnitude(u_base, v_base)
+
+    if current_speed == 0:
+        A0 = 1.0
+    else:
+        A0 = target_speed / current_speed
+
+    # Scaled spectrum
+    A_mag = A0 * A_base
+
+    A = A0 * A_base_hermitian
+
+    psi_hat = A * np.exp(-1j * omega * t)
+    psi_hat[0, 0] = 0
+    psi_real = A0 * np.fft.ifft2(psi_hat).real
+
+    u = A0 * u_base
+    v = A0 * v_base
+
+    return X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi, dx, dy, K, L
+
+
 def generate_rossby_field(
     seed=123,
     beta=1.728e-3,
