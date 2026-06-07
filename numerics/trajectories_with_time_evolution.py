@@ -48,7 +48,8 @@ for j in range(ITERS+1):
         rX, rY, rx, ry, rq, romega, rA_base, rdx, rdy, rK, rL,
         t=j*DT, given_phi=phi_now.astype(np.float64)
     )
-    print("Rossby time is ", time.time()-start)
+     if j % 100 == 0:
+        print(j)
     
     if old_psi is None:
         old_psi = psi_real
