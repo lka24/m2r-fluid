@@ -310,12 +310,22 @@ elif PLOTTING == "ANIMATION" and not DOTS:
                 all_lines.append(line)
 
         return all_lines + [title]
+    ANIMATION_SECONDS = 15
+    TOTAL_FRAMES = 300
+
+    frame_indices = np.linspace(
+    0,
+    len(times) - 1,
+    TOTAL_FRAMES,
+    dtype=int）
+        
+    interval = ANIMATION_SECONDS * 1000 / TOTAL_FRAMES
+
     ani = FuncAnimation(
-        fig,
-        update,
-        frames=len(times),
-        interval=80,
-        blit=False
-    )
+    fig,
+    update,
+    frames=frame_indices,
+    interval=interval,
+    blit=False)
     print(time.time()-start)
     plt.show()
