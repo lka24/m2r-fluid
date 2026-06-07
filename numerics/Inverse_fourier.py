@@ -109,7 +109,7 @@ def generate_rossby_field_2(
 
     psi_hat = A * np.exp(-1j * omega * t)
     psi_hat[0, 0] = 0
-    psi_real = A0 * np.fft.ifft2(psi_hat).real
+    psi_real = np.fft.ifft2(psi_hat).real
 
     u = A0 * u_base
     v = A0 * v_base
