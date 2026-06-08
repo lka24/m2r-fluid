@@ -7,6 +7,7 @@ import numpy as np
 import scipy.interpolate as spi
 import scipy.stats as sps
 import phi_stochastic as pstoch
+import time
 from matplotlib.animation import FuncAnimation
 from propagation_with_potential_phi import solve_potential_from_material_derivative
 
@@ -14,101 +15,133 @@ from propagation_with_potential_phi import solve_potential_from_material_derivat
 # from `rkm_fourier.py`.
 
 # Module-level constants
-ITERS = 1000
+ITERS = 0
 DT = 0.1 #day
 ONLY_EPS = False
 METHOD = "linear"
-Nx=31
-Ny=31
+DISTRIBUTE = "linspace"
+Nx=20
+Ny=20
 Nplots=2
 t0 = 0.0
 PLOTTING = "2D"
-DOTS = True
+DOTS = False
 SEED = np.random.randint(1, 10001)
-SCALE_FACTOR = 1e10
-GAMMA = 0.3
+SCALE_FACTOR = 1
+GAMMA = 0
 
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested
 # in.
-
+start = time.time()
 u_arr, v_arr = None, None
 old_psi = None
-phis = pstoch.vector_solve_stochastic_phi(days=int(ITERS*DT), size=(200,200), dt=DT)
-if GAMMA==0:
-    for j in range(ITERS+1):
-    X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, dX, dY, kay, ell = invf.generate_rossby_field(
+phis = pstoch.vector_solve_stochastic_phi(days=int(ITERS*DT), size=(200,200), dt=DT,strength=1)
+print("PSI time ", time.time()-start)
+start = time.time()
+for j in range(ITERS+1):
+    start = time.time()
+    if j == 0:
+        rX, rY, rx, ry, romega, rA_base, rdx, rdy, rq, rK, rL = invf.init_rossby()
+    phi_now = phis[j]
+    X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, dX, dY, kay, ell = invf.generate_rossby_field_2(
+        rX, rY, rx, ry, rq, romega, rA_base, rdx, rdy, rK, rL,
         t=j*DT, given_phi=phi_now.astype(np.float64)
     )
+    if j % 100 == 0:
+        print(j)
+    
     if old_psi is None:
         old_psi = psi_real
     if GAMMA != 0:
         pot = solve_potential_from_material_derivative(psi_real, old_psi, dt=DT, dx=dX, dy=dY, K=kay, L=ell, Rd=100)
         u, v = GAMMA * np.gradient(pot, dX, axis=1) + (1-GAMMA)*u, GAMMA * np.gradient(pot, dY, axis=0) + (1-GAMMA)*v
         phi_now = phis[j]
-
-        X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, a1, a2, a3, a4 = invf.generate_rossby_field(
-        t=j*DT, given_phi=phi_now.astype(np.float64)
-    )
     if u_arr is None:
-        u_arr = np.memmap('u_cache.dat', dtype=np.float32, mode='w+', shape=(ITERS + 1, u.shape[0], u.shape[1]))
-        v_arr = np.memmap('v_cache.dat', dtype=np.float32, mode='w+', shape=(ITERS + 1, v.shape[0], v.shape[1]))
+        u_arr = np.empty(shape=(ITERS + 1, u.shape[0], u.shape[1]))
+        v_arr = np.empty(shape=(ITERS + 1, v.shape[0], v.shape[1]))
     u_arr[j] = u
     v_arr[j] = v
     old_psi = psi_real
-
+print(time.time() - start)
+start = time.time()
 np.random.seed(SEED)
 # u_arr, v_arr = np.array(u_arr), np.array(v_arr)
 # times = np.linspace(t0, ITERS*DT, ITERS)
 times = np.array([t0 + j * DT for j in range(ITERS+1)])
-interpolator_u = spi.RegularGridInterpolator(
-    (times, whys, exes),
-    u_arr,
-    METHOD
-)
+# interpolator_u = spi.RegularGridInterpolator(
+#     (times, whys, exes),
+#     u_arr,
+#     METHOD
+# )
 
 
-interpolator_v = spi.RegularGridInterpolator(
-    (times, whys, exes),
-    v_arr,
-    METHOD
-)
+# interpolator_v = spi.RegularGridInterpolator(
+#     (times, whys, exes),
+#     v_arr,
+#     METHOD
+# )
 
 
 x_range = (exes[0], exes[-1]) #km
 y_range = (whys[0], whys[-1]) #km
 
-square_x = np.linspace(min(x_range), max(x_range), Nx)
-square_y = np.linspace(min(y_range), max(y_range), Ny)
+if DISTRIBUTE == "random":
+    square_x = np.random.uniform(min(x_range), max(x_range), Nx)
+    square_y = np.random.uniform(min(y_range), max(y_range), Ny)
+elif DISTRIBUTE == "linspace":
+    square_x = np.linspace(min(x_range), max(x_range), Nx)
+    square_y = np.linspace(min(y_range), max(y_range), Ny)
 square_x, square_y = rkm.pointsquare(square_x, square_y)
+
+def interpolatify_u(idx):
+    return spi.RegularGridInterpolator((whys,exes),u_arr[idx],METHOD)
+
+def interpolatify_v(idx):
+    return spi.RegularGridInterpolator((whys,exes),v_arr[idx],METHOD)
+
+def clever_interpolate(get, t, x, y):
+    if t >= ITERS * DT + t0:
+        t =  ITERS * DT + t0
+    float_iters = (t-t0)/DT
+    below, above = int(np.floor(float_iters)), int(np.ceil(float_iters))
+    if below == above:
+        return get(below)((y,x)) * SCALE_FACTOR
+ 
+    factor = float_iters - below
+    return (factor * get(above)((y,x)) + (1-factor)*get(below)((y,x))) * SCALE_FACTOR
+
 
 def wrapper_u(t, x, y):
     x = x_range[0] + np.mod(x - x_range[0], x_range[1] - x_range[0])
     y = y_range[0] + np.mod(y - y_range[0], y_range[1] - y_range[0])
-    if t >= ITERS * DT + t0:
-        t =  ITERS * DT + t0
-    pts = np.column_stack((y,x))
-    pts = np.insert(pts, 0, np.ones(len(x)) * t, axis=1)
-    return interpolator_u(pts).squeeze() * SCALE_FACTOR
+    # if t >= ITERS * DT + t0:
+    #     t =  ITERS * DT + t0
+    # pts = np.column_stack((y,x))
+    # pts = np.insert(pts, 0, np.ones(len(x)) * t, axis=1)
+    # return interpolator_u(pts).squeeze() * SCALE_FACTOR
+    return clever_interpolate(interpolatify_u, t, x, y)
 
 
 def wrapper_v(t, x, y):
     x = x_range[0] + np.mod(x - x_range[0], x_range[1] - x_range[0])
     y = y_range[0] + np.mod(y - y_range[0], y_range[1] - y_range[0])
-    if t >= ITERS * DT + t0:
-        t =  ITERS * DT + t0
-    pts = np.column_stack((y,x))
-    pts = np.insert(pts, 0, np.ones(len(x)) * t, axis=1)
-    return interpolator_v(pts).squeeze() * SCALE_FACTOR
-
+    # if t >= ITERS * DT + t0:
+    #     t =  ITERS * DT + t0
+    # pts = np.column_stack((y,x))
+    # pts = np.insert(pts, 0, np.ones(len(x)) * t, axis=1)
+    # return interpolator_v(pts).squeeze() * SCALE_FACTOR
+    return clever_interpolate(interpolatify_v, t, x, y)
 
 X1 = np.random.uniform(-10, 10, 1)[0]
 X2 = np.random.uniform(-10, 10, 1)
 
 history = rkm.runge_single(t0, np.array(square_x), np.array(square_y), wrapper_u, wrapper_v, ITERS, DT, ONLY_EPS)
+print(time.time()-start)
+start = time.time()
 
 if PLOTTING == "2D" and not DOTS:
-    fig, ax2 = plt.subplots()
+    fig, (ax1, ax2) = plt.subplots(2)
     #ax.set_xlim(x_range[0], x_range[1])
     #ax.set_ylim(y_range[0], y_range[1])
 
@@ -134,9 +167,9 @@ if PLOTTING == "2D" and not DOTS:
                 for piece in periodichists[j]:
                     xs = offset_x * (x_range[1] - x_range[0] - epsilon) + np.array([r[1] for r in piece])
                     ys = offset_y * (y_range[1] - y_range[0]- epsilon) + np.array([r[2] for r in piece])
-                    # ax1.plot(xs, ys, linewidth=0.75, color="blue")
+                    ax1.plot(xs, ys, linewidth=0.75, color="blue")
                     if offset_x == 0 and offset_y == 0:
-                        ax2.plot(xs, ys, linewidth=0.15, color="blue")
+                        ax2.plot(xs, ys, linewidth=0.75, color="blue")
     ax2.set_xlabel("x (km)")
     ax2.set_ylabel("y (km)")
     ax2.text(
@@ -150,6 +183,7 @@ if PLOTTING == "2D" and not DOTS:
     )
     ax2.set_aspect("equal")
     plt.savefig('rossby1.png', dpi=300)
+    print(time.time()-start)
     plt.show()
 elif PLOTTING == "2D" and DOTS:
     fig, ax = plt.subplots()
@@ -160,6 +194,7 @@ elif PLOTTING == "2D" and DOTS:
     final_y = (final_y - min(whys)) % (max(whys) - min(whys)) + min(whys)
 
     ax.scatter(final_x, final_y)
+    print(time.time()-start)
     plt.show()
     print(u_arr)
 
@@ -184,6 +219,7 @@ elif PLOTTING == "3D":
     ax.set_zlabel("time (day)")
     ax.view_init(azim=90, elev=-90)
     #ax.set_zticks([])
+    print(time.time()-start)
     plt.show()
     
 elif PLOTTING == "ANIMATION" and DOTS:
@@ -214,6 +250,7 @@ elif PLOTTING == "ANIMATION" and DOTS:
         title.set_text(f"Particle positions at t = {time_hist[frame]:.2f} days")
         return scat, title
     ani = FuncAnimation(fig,update,frames=len(time_hist),interval=80,blit=False)
+    print(time.time()-start)
     plt.show()
 
 elif PLOTTING == "ANIMATION" and not DOTS:
@@ -273,12 +310,22 @@ elif PLOTTING == "ANIMATION" and not DOTS:
                 all_lines.append(line)
 
         return all_lines + [title]
-    ani = FuncAnimation(
-        fig,
-        update,
-        frames=len(times),
-        interval=80,
-        blit=False
-    )
+    ANIMATION_SECONDS = 15
+    TOTAL_FRAMES = 300
 
+    frame_indices = np.linspace(
+    0,
+    len(times) - 1,
+    TOTAL_FRAMES,
+    dtype=int)
+        
+    interval = ANIMATION_SECONDS * 1000 / TOTAL_FRAMES
+
+    ani = FuncAnimation(
+    fig,
+    update,
+    frames=frame_indices,
+    interval=interval,
+    blit=False)
+    print(time.time()-start)
     plt.show()

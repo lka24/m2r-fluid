@@ -135,16 +135,18 @@ def periodify(x_range, y_range, hist):
     
         if prev_x is not None:
             if abs(new_x - prev_x) > lx_box / 2 or abs(new_y - prev_y) > ly_box / 2:
+                halfway_x, halfway_y = new_x, new_y
                 if abs(new_x - prev_x) > lx_box / 2:
                     if new_x < prev_x:
-                        current_segment.append((t, xmax, new_y))
+                        halfway_x = xmax
                     else:
-                        current_segment.append((t, xmin, new_y))
-                elif abs(new_y - prev_y) > ly_box / 2:
-                        if new_y < prev_y:
-                            current_segment.append((t, new_x, ymax))
-                        else:
-                            current_segment.append((t, new_x, ymin))
+                        halfway_x = xmin
+                if abs(new_y - prev_y) > ly_box / 2:
+                    if new_y < prev_y:
+                        halfway_y = ymax
+                    else:
+                        halfway_y = ymin
+                current_segment.append((t, halfway_x, halfway_y))
 
                 if current_segment:
                     master.append(current_segment)
