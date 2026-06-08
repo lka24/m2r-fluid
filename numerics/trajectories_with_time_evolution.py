@@ -19,7 +19,7 @@ ITERS = 0
 DT = 0.1 #day
 ONLY_EPS = False
 METHOD = "linear"
-DISTRIBUTE = "random"
+DISTRIBUTE = "linspace"
 Nx=20
 Ny=20
 Nplots=2
@@ -317,7 +317,7 @@ elif PLOTTING == "ANIMATION" and not DOTS:
     0,
     len(times) - 1,
     TOTAL_FRAMES,
-    dtype=int）
+    dtype=int)
         
     interval = ANIMATION_SECONDS * 1000 / TOTAL_FRAMES
 
