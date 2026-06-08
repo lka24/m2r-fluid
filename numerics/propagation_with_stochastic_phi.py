@@ -23,7 +23,7 @@ def animate_rossby_field_stochastic_phi(
     quiver_scale=0.7,
     Rd=100,
     Tmem=10,
-    phi_noise_strength=1.0,
+    phi_noise_strength=0.1,
     ou_dt=0.1,
 ):
     np.random.seed(seed)
@@ -139,7 +139,7 @@ def animate_rossby_field_stochastic_phi(
 
 anim, fig = animate_rossby_field_stochastic_phi(
     Tmem=10,
-    phi_noise_strength=1.0,
+    phi_noise_strength=0.1,
     n_frames=100,
     total_days=1000,
     ou_dt=0.1,

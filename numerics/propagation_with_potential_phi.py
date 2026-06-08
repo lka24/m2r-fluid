@@ -71,7 +71,7 @@ def animate_rossby_potential_psi_velocity(
     quiver_scale=0.7,
     Rd=100,
     Tmem=10,
-    phi_noise_strength=1.0,
+    phi_noise_strength=0.1,
     ou_dt=0.1,
     gamma=0.99,
 ):
@@ -266,7 +266,7 @@ def animate_rossby_potential_psi_velocity(
 # anim = animate_rossby_potential_psi_velocity(
 #     gamma=0.99,
 #     Tmem=1000,
-#     phi_noise_strength=1.0,
+#     phi_noise_strength=0.1
 #     n_frames=150,
 #     total_days=1000,
 #     ou_dt=0.1,
