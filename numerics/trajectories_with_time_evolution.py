@@ -15,13 +15,13 @@ from propagation_with_potential_phi import solve_potential_from_material_derivat
 # from `rkm_fourier.py`.
 
 # Module-level constants
-ITERS = 10000
+ITERS = 0
 DT = 0.1 #day
 ONLY_EPS = False
 METHOD = "linear"
 DISTRIBUTE = "random"
-Nx=1
-Ny=1
+Nx=20
+Ny=20
 Nplots=2
 t0 = 0.0
 PLOTTING = "2D"
@@ -48,7 +48,7 @@ for j in range(ITERS+1):
         rX, rY, rx, ry, rq, romega, rA_base, rdx, rdy, rK, rL,
         t=j*DT, given_phi=phi_now.astype(np.float64)
     )
-     if j % 100 == 0:
+    if j % 100 == 0:
         print(j)
     
     if old_psi is None:
