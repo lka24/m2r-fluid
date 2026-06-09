@@ -1,4 +1,5 @@
 import runge_kutta_multi as rkm
+import runge_kutta as rk
 import matplotlib
 matplotlib.rc('font', family='Century')
 import matplotlib.pyplot as plt
@@ -15,7 +16,7 @@ from propagation_with_potential_phi import solve_potential_from_material_derivat
 # from `rkm_fourier.py`.
 
 # Module-level constants
-ITERS = 0
+ITERS = 1000
 DT = 0.1 #day
 ONLY_EPS = False
 METHOD = "linear"
@@ -34,7 +35,7 @@ GAMMA = 0
 # thus we construct arrays of u and v for each time we are interested
 # in.
 start = time.time()
-u_arr, v_arr = None, None
+u_arr, v_arr, divergence_arr = None, None, None
 old_psi = None
 phis = pstoch.vector_solve_stochastic_phi(days=int(ITERS*DT), size=(200,200), dt=DT,strength=1)
 print("PSI time ", time.time()-start)
@@ -60,8 +61,13 @@ for j in range(ITERS+1):
     if u_arr is None:
         u_arr = np.empty(shape=(ITERS + 1, u.shape[0], u.shape[1]))
         v_arr = np.empty(shape=(ITERS + 1, v.shape[0], v.shape[1]))
+        divergence_arr = np.empty(shape=(ITERS + 1, v.shape[0], v.shape[1]))
+    u_divcomp = np.gradient(u, dX, axis=1)
+    v_divcomp = np.gradient(v, dY, axis=0)
+    divergence = u_divcomp + v_divcomp
     u_arr[j] = u
     v_arr[j] = v
+    divergence_arr[j] = divergence
     old_psi = psi_real
 print(time.time() - start)
 start = time.time()
@@ -100,6 +106,9 @@ def interpolatify_u(idx):
 def interpolatify_v(idx):
     return spi.RegularGridInterpolator((whys,exes),v_arr[idx],METHOD)
 
+def interpolatify_div(idx):
+    return spi.RegularGridInterpolator((whys,exes),divergence_arr[idx],"linear")
+
 def clever_interpolate(get, t, x, y):
     if t >= ITERS * DT + t0:
         t =  ITERS * DT + t0
@@ -133,10 +142,28 @@ def wrapper_v(t, x, y):
     # return interpolator_v(pts).squeeze() * SCALE_FACTOR
     return clever_interpolate(interpolatify_v, t, x, y)
 
+
+def wrapper_div(t, x, y):
+    x = x_range[0] + np.mod(x - x_range[0], x_range[1] - x_range[0])
+    y = y_range[0] + np.mod(y - y_range[0], y_range[1] - y_range[0])
+    return clever_interpolate(interpolatify_div, t, x, y)
+
 X1 = np.random.uniform(-10, 10, 1)[0]
 X2 = np.random.uniform(-10, 10, 1)
 
 history = rkm.runge_single(t0, np.array(square_x), np.array(square_y), wrapper_u, wrapper_v, ITERS, DT, ONLY_EPS)
+
+
+# dC/dt = C div(u(x(t), t))
+
+def conc_func(t, C):
+    #find u(x(t), t)
+
+    div_u = wrapper_div(*history[int(t/DT)])
+    return -C*div_u
+
+conc_history = rk.runge(t0, np.ones(shape=(400,)), conc_func, ITERS, DT)
+print(conc_history[-1][1])
 print(time.time()-start)
 start = time.time()
 
