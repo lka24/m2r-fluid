@@ -21,15 +21,15 @@ DT = 0.1 #day
 ONLY_EPS = False
 METHOD = "linear"
 DISTRIBUTE = "linspace"
-Nx=20
-Ny=20
+Nx=31
+Ny=31
 Nplots=2
 t0 = 0.0
 PLOTTING = "2D"
-DOTS = False
+DOTS = True
 SEED = np.random.randint(1, 10001)
 SCALE_FACTOR = 1
-GAMMA = 0
+GAMMA = 0.3
 
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested
@@ -162,8 +162,8 @@ def conc_func(t, C):
     div_u = wrapper_div(*history[int(t/DT)])
     return -C*div_u
 
-conc_history = rk.runge(t0, np.ones(shape=(400,)), conc_func, ITERS, DT)
-print(conc_history[-1][1])
+conc_history = rk.runge(t0, np.ones(shape=(Nx*Ny,)), conc_func, ITERS, DT)
+
 print(time.time()-start)
 start = time.time()
 
@@ -219,9 +219,18 @@ elif PLOTTING == "2D" and DOTS:
     final_t, final_x, final_y = history[-1]
     final_x = (final_x - min(exes)) % (max(exes) - min(exes)) + min(exes)
     final_y = (final_y - min(whys)) % (max(whys) - min(whys)) + min(whys)
-
-    ax.scatter(final_x, final_y)
+    colours = np.array(conc_history[-1][1])
+    lp = np.percentile(colours, 1)
+    up = np.percentile(colours, 80)
+    for i, j in enumerate(colours):
+        if j < lp:
+            colours[i] = lp
+        elif j > up:
+            colours[i] = up
+    plt.scatter(final_x, final_y, c=colours, cmap="summer")
     print(time.time()-start)
+
+    plt.colorbar()
     plt.show()
     print(u_arr)
 
