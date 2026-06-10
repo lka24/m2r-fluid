@@ -9,10 +9,11 @@ import phi_stochastic as pstoch
 import time
 from matplotlib.animation import FuncAnimation
 from propagation_with_potential_phi import solve_potential_from_material_derivative
+from sklearn.cluster import DBSCAN
 
 
-ITERS = 1000
-DT = 0.1  # day
+ITERS = 3000
+DT = 0.1
 ONLY_EPS = False
 METHOD = "linear"
 DISTRIBUTE = "linspace"
@@ -24,12 +25,13 @@ t0 = 0.0
 SEED = np.random.randint(1, 10001)
 
 SCALE_FACTOR = 1
-GAMMA = 0
+GAMMA = 0.5
 
 SHOW_ONLY_CLUSTER = True
 CLUSTER_THRESHOLD = 2.0
 
 SAVE_GIF = False
+SAVE_MASS_PLOT = False
 
 
 start = time.time()
@@ -45,7 +47,6 @@ phis = pstoch.vector_solve_stochastic_phi(
 )
 
 print("PHI time:", time.time() - start)
-
 
 start = time.time()
 
@@ -99,7 +100,6 @@ for j in range(ITERS + 1):
     old_psi = psi_real
 
 print("velocity field time:", time.time() - start)
-
 
 print("Computing divergence...")
 
@@ -221,6 +221,90 @@ for n in range(len(time_hist) - 1):
     logC_hist[n + 1] = logC_hist[n] - 0.5 * (div_old + div_new) * DT
 
 C_hist = np.exp(logC_hist)
+
+
+print("Computing cluster mass...")
+
+cluster_mass = np.zeros(len(time_hist))
+cluster_particle_fraction = np.zeros(len(time_hist))
+mean_cluster_C_hist = np.zeros(len(time_hist))
+max_cluster_C_hist = np.zeros(len(time_hist))
+
+for n in range(len(time_hist)):
+    C_now = C_hist[n]
+    mask = C_now > CLUSTER_THRESHOLD
+
+    cluster_mass[n] = np.sum(C_now[mask]) / np.sum(C_now)
+    cluster_particle_fraction[n] = np.mean(mask)
+
+    if np.any(mask):
+        mean_cluster_C_hist[n] = np.mean(C_now[mask])
+        max_cluster_C_hist[n] = np.max(C_now[mask])
+    else:
+        mean_cluster_C_hist[n] = 0.0
+        max_cluster_C_hist[n] = 0.0
+
+    if n % 100 == 0:
+        print(
+            f"time step {n:4d} | "
+            f"t = {time_hist[n]:7.2f} days | "
+            f"cluster mass = {cluster_mass[n]:.4f} | "
+            f"particle frac = {cluster_particle_fraction[n]:.4f} | "
+            f"mean C = {mean_cluster_C_hist[n]:.4f} | "
+            f"max C = {max_cluster_C_hist[n]:.4f}"
+        )
+
+print("Final cluster mass =", cluster_mass[-1])
+print("Final cluster particle fraction =", cluster_particle_fraction[-1])
+print("Final mean cluster C =", mean_cluster_C_hist[-1])
+print("Final max cluster C =", max_cluster_C_hist[-1])
+
+
+if SAVE_MASS_PLOT:
+    fig_mass, ax_mass = plt.subplots(figsize=(6, 4))
+
+    ax_mass.plot(time_hist, cluster_mass, label="Cluster mass")
+    ax_mass.plot(
+        time_hist,
+        cluster_particle_fraction,
+        label="Particle fraction",
+        linestyle="--"
+    )
+
+    ax_mass.set_xlabel("time (day)")
+    ax_mass.set_ylabel("fraction")
+    ax_mass.set_title(
+        f"Cluster mass, gamma = {GAMMA}, threshold C > {CLUSTER_THRESHOLD}"
+    )
+
+    ax_mass.legend()
+    ax_mass.grid(True)
+
+    plt.savefig(
+        f"cluster_mass_gamma_{GAMMA}.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+
+    fig_c, ax_c = plt.subplots(figsize=(6, 4))
+
+    ax_c.plot(time_hist, mean_cluster_C_hist, label="Mean cluster C")
+    ax_c.plot(time_hist, max_cluster_C_hist, label="Max cluster C")
+
+    ax_c.set_xlabel("time (day)")
+    ax_c.set_ylabel("C")
+    ax_c.set_title(
+        f"Cluster concentration, gamma = {GAMMA}, threshold C > {CLUSTER_THRESHOLD}"
+    )
+
+    ax_c.legend()
+    ax_c.grid(True)
+
+    plt.savefig(
+        f"cluster_concentration_gamma_{GAMMA}.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
 
 
 xmin, xmax = x_range
