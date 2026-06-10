@@ -36,7 +36,7 @@ GAMMA = 0
 start = time.time()
 u_arr, v_arr = None, None
 old_psi = None
-phis = pstoch.vector_solve_stochastic_phi(days=int(ITERS*DT), size=(200,200), dt=DT,strength=1)
+phis = pstoch.vector_solve_stochastic_phi(days=int(ITERS*DT), size=(200,200), dt=DT,strength=0.1)
 print("PSI time ", time.time()-start)
 start = time.time()
 for j in range(ITERS+1):
