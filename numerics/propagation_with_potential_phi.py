@@ -73,7 +73,7 @@ def animate_rossby_potential_psi_velocity(
     Tmem=10,
     phi_noise_strength=0.1,
     ou_dt=0.1,
-    gamma=0.99,
+    gamma=0.01,
 ):
     X, Y, x, y, psi_real, u_psi0, v_psi0, q, A_mag, A, omega, phi, dx, dy, K, L = generate_rossby_field(
         seed=seed,
@@ -107,8 +107,8 @@ def animate_rossby_potential_psi_velocity(
     u_pot0 = np.gradient(potential, dx, axis=1)
     v_pot0 = np.gradient(potential, dy, axis=0)
 
-    u0 = gamma * u_psi0 + (1 - gamma) * u_pot0
-    v0 = gamma * v_psi0 + (1 - gamma) * v_pot0
+    u0 = (1 - gamma) * u_psi0 + gamma * u_pot0
+    v0 = (1 - gamma) * v_psi0 + gamma * v_pot0
 
     fig, (ax_psi, ax_potential) = plt.subplots(1, 2, figsize=(16, 6))
 
@@ -203,8 +203,8 @@ def animate_rossby_potential_psi_velocity(
         u_pot = np.gradient(potential, dx, axis=1)
         v_pot = np.gradient(potential, dy, axis=0)
 
-        u = gamma * u_psi + (1 - gamma) * u_pot
-        v = gamma * v_psi + (1 - gamma) * v_pot
+        u = (1 - gamma) * u_psi + gamma * u_pot
+        v = (1 - gamma) * v_psi + gamma * v_pot
 
         # Store data for particle trajectories
         psi_history[frame] = psi
@@ -264,7 +264,7 @@ def animate_rossby_potential_psi_velocity(
 
 
 # anim = animate_rossby_potential_psi_velocity(
-#     gamma=0.99,
+#     gamma=0.01,
 #     Tmem=1000,
 #     phi_noise_strength=0.1
 #     n_frames=150,
