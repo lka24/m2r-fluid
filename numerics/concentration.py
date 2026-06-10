@@ -1,14 +1,14 @@
-import runge_kutta_multi_1 as rkm
+import runge_kutta_multi as rkm
 import matplotlib
 matplotlib.rc('font', family='Century')
 import matplotlib.pyplot as plt
-import Inverse_fourier_1 as invf
+import Inverse_fourier as invf
 import numpy as np
 import scipy.interpolate as spi
-import phi_stochastic_1 as pstoch
+import phi_stochastic as pstoch
 import time
 from matplotlib.animation import FuncAnimation
-from propagation_with_potential_phi_1 import solve_potential_from_material_derivative
+from propagation_with_potential_phi import solve_potential_from_material_derivative
 
 
 ITERS = 1000
