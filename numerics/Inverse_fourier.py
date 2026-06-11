@@ -33,7 +33,7 @@ def init_rossby(
     Ny=200,
     Lx=1e3,
     Ly=1e3,
-    Rd=100,
+    Rd=20,
 ):
     x = np.linspace(-Lx / 2, Lx / 2, Nx)
     y = np.linspace(-Ly / 2, Ly / 2, Ny)
@@ -127,7 +127,7 @@ def generate_rossby_field(
     Lx=1e3,
     Ly=1e3,
     given_phi=None,
-    Rd=100,
+    Rd=20,
     target_speed=20.0,   # km/day, about 0.23 m/s
 ):
     np.random.seed(seed)
