@@ -93,8 +93,8 @@ def generate_rossby_field_2(
 
     # u_base = -np.gradient(psi_base, dy, axis=0)
     # v_base = np.gradient(psi_base, dx, axis=1)
-    u_base = np.fft.ifft2(u_hat).real
-    v_base = np.fft.ifft2(v_hat).real
+    u_base = np.fft.fftshift(np.fft.ifft2(u_hat).real)
+    v_base = np.fft.fftshift(np.fft.ifft2(v_hat).real)
     current_speed = average_velocity_magnitude(u_base, v_base)
 
     if current_speed == 0:
@@ -109,7 +109,7 @@ def generate_rossby_field_2(
 
     psi_hat = A * np.exp(-1j * omega * t)
     psi_hat[0, 0] = 0
-    psi_real = np.fft.ifft2(psi_hat).real
+    psi_real = np.fft.fftshift(np.fft.ifft2(psi_hat).real)
 
     u = A0 * u_base
     v = A0 * v_base

@@ -12,7 +12,7 @@ from propagation_with_potential_phi import solve_potential_from_material_derivat
 from sklearn.cluster import DBSCAN
 
 
-ITERS = 3000
+ITERS = 1000
 DT = 0.1
 ONLY_EPS = False
 METHOD = "linear"
@@ -25,9 +25,9 @@ t0 = 0.0
 SEED = np.random.randint(1, 10001)
 
 SCALE_FACTOR = 1
-GAMMA = 0.5
+GAMMA = 0
 
-SHOW_ONLY_CLUSTER = True
+SHOW_ONLY_CLUSTER = False
 CLUSTER_THRESHOLD = 2.0
 
 SAVE_GIF = False
@@ -43,7 +43,7 @@ phis = pstoch.vector_solve_stochastic_phi(
     days=int(ITERS * DT),
     size=(200, 200),
     dt=DT,
-    strength=0.1
+    strength=0
 )
 
 print("PHI time:", time.time() - start)
@@ -125,6 +125,8 @@ if DISTRIBUTE == "random":
 elif DISTRIBUTE == "linspace":
     square_x = np.linspace(min(x_range), max(x_range), Nx)
     square_y = np.linspace(min(y_range), max(y_range), Ny)
+    # square_x = np.linspace(-500, -300, Nx)
+    # square_y = np.linspace(-500, -300, Ny)
 
 square_x, square_y = rkm.pointsquare(square_x, square_y)
 
@@ -332,14 +334,16 @@ scat = ax.scatter(
     y0,
     s=5,
     c=colour0,
-    cmap="viridis"
+    cmap="turbo"
 )
 
-cbar = plt.colorbar(scat, ax=ax)
+cbar = fig.colorbar(scat, ax=ax)
 cbar.set_label(r"$\log_{10}(C)$")
 
 ax.set_xlim(xmin, xmax)
 ax.set_ylim(ymin, ymax)
+# ax.set_xlim(-500,-300)
+# ax.set_ylim(-500,-300)
 ax.set_aspect("equal")
 ax.set_xlabel("x (km)")
 ax.set_ylabel("y (km)")

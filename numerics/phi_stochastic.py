@@ -54,7 +54,7 @@ def vector_solve_stochastic_phi(
     phis = np.empty((int(days/dt)+1, *size))
     phis[0] = startphi
     dWs = strength *np.random.normal(0, np.sqrt(dt), size=(int(days/dt), *size))
-    for j in range(int(days/dt)):
+    for j in range(1, int(days/dt)):
         phis[j] = phis[j-1] - (phis[j-1] / Tmem) * dt + dWs[j]
     return phis
 

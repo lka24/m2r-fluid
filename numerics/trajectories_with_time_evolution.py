@@ -15,7 +15,7 @@ from propagation_with_potential_phi import solve_potential_from_material_derivat
 # from `rkm_fourier.py`.
 
 # Module-level constants
-ITERS = 0
+ITERS = 1000
 DT = 0.1 #day
 ONLY_EPS = False
 METHOD = "linear"
