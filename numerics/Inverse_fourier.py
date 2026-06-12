@@ -133,6 +133,20 @@ def embiggen(small, factor):
     big[-s1//2:,-s2//2:] = small[-s1//2:,-s2//2:]
     return big * factor**2
 
+
+def debiggen(big, factor):
+    b1, b2 = big.shape
+    if int(b1/factor) != b1/factor or int(b2/factor) != b2/factor:
+        raise ValueError("Incorrect attempt to debiggen array of incompatible size and factor")
+    small = np.zeros((int(b1/factor), int(b2/factor)), dtype=complex)
+    b1, b2 = b1//factor, b2//factor
+    small[:b1//2,:b2//2] = big[:b1//2,:b2//2]
+    small[-b1//2:,:b2//2] = big[-b1//2:,:b2//2]
+    small[:b1//2,-b2//2:] = big[:b1//2,-b2//2:]
+    small[-b1//2:,-b2//2:] = big[-b1//2:,-b2//2:]
+    return small / factor**2
+
+
 def generate_rossby_field(
     seed=123,
     beta=1.728e-3,

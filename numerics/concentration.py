@@ -5,18 +5,18 @@ import matplotlib.pyplot as plt
 import Inverse_fourier as invf
 import numpy as np
 import scipy.interpolate as spi
+import scipy.ndimage as spn
 import phi_stochastic as pstoch
 import time
 from matplotlib.animation import FuncAnimation
 from propagation_with_potential_phi import solve_potential_from_material_derivative
-from sklearn.cluster import DBSCAN
 
 
 ITERS = 1000
 DT = 0.1
 ONLY_EPS = False
 METHOD = "linear"
-DISTRIBUTE = "linspace"
+DISTRIBUTE = "random"
 
 Nx = 100
 Ny = 100
@@ -25,7 +25,7 @@ t0 = 0.0
 SEED = np.random.randint(1, 10001)
 
 SCALE_FACTOR = 1
-GAMMA = 0
+GAMMA = 0.1
 
 SHOW_ONLY_CLUSTER = False
 CLUSTER_THRESHOLD = 2.0
@@ -87,8 +87,12 @@ for j in range(ITERS + 1):
         u_p = np.gradient(pot, dX, axis=1)
         v_p = np.gradient(pot, dY, axis=0)
 
+        u = invf.debiggen(u, 3)
+        v = invf.debiggen(v, 3)
         u = GAMMA * u_p + (1 - GAMMA) * u
         v = GAMMA * v_p + (1 - GAMMA) * v
+        # u = invf.embiggen(u, 3)
+        # v = invf.embiggen(v, 3)
 
     if u_arr is None:
         u_arr = np.empty((ITERS + 1, u.shape[0], u.shape[1]))
@@ -119,8 +123,8 @@ x_range = (exes[0], exes[-1])
 y_range = (whys[0], whys[-1])
 
 if DISTRIBUTE == "random":
-    square_x = np.random.uniform(min(x_range), max(x_range), Nx)
-    square_y = np.random.uniform(min(y_range), max(y_range), Ny)
+    square_x = np.random.uniform(min(x_range), max(x_range), Nx*Ny)
+    square_y = np.random.uniform(min(y_range), max(y_range), Ny*Nx)
 
 elif DISTRIBUTE == "linspace":
     square_x = np.linspace(min(x_range), max(x_range), Nx)
@@ -128,15 +132,23 @@ elif DISTRIBUTE == "linspace":
     # square_x = np.linspace(-500, -300, Nx)
     # square_y = np.linspace(-500, -300, Ny)
 
-square_x, square_y = rkm.pointsquare(square_x, square_y)
+    square_x, square_y = rkm.pointsquare(square_x, square_y)
 
 
 def interpolatify_u(idx):
-    return spi.RegularGridInterpolator((whys, exes), u_arr[idx], METHOD)
+    return spi.RegularGridInterpolator(
+        (whys, exes),
+        spn.zoom(u[idx], 3.0, order=1, mode="grid-wrap"),
+        METHOD
+    )
 
 
 def interpolatify_v(idx):
-    return spi.RegularGridInterpolator((whys, exes), v_arr[idx], METHOD)
+    return spi.RegularGridInterpolator(
+        (whys, exes),
+        spn.zoom(v[idx], 3.0, order=1, mode="grid-wrap"),
+        METHOD
+    )
 
 
 def interpolatify_div(idx):
