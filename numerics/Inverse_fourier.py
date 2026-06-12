@@ -34,9 +34,10 @@ def init_rossby(
     Lx=1e3,
     Ly=1e3,
     Rd=20,
+    intended_factor=3
 ):
-    x = np.linspace(-Lx / 2, Lx / 2, Nx)
-    y = np.linspace(-Ly / 2, Ly / 2, Ny)
+    x = np.linspace(-Lx / 2, Lx / 2, Nx * intended_factor, endpoint=False)
+    y = np.linspace(-Ly / 2, Ly / 2, Ny * intended_factor, endpoint=False)
     X, Y = np.meshgrid(x, y)
 
     dx = x[1] - x[0]
@@ -89,6 +90,12 @@ def generate_rossby_field_2(
     u_hat = -1j * L * psi_hat_base
     v_hat = 1j * K * psi_hat_base
 
+    # In order to achieve less numerical interference
+    # when taking the DFT/inverse DFT, we will pad
+    # the array with zeroes before doing so.
+
+    u_hat = embiggen(u_hat, 3)
+    v_hat = embiggen(v_hat, 3)
     # psi_base = np.fft.ifft2(psi_hat_base).real
 
     # u_base = -np.gradient(psi_base, dy, axis=0)
@@ -116,6 +123,15 @@ def generate_rossby_field_2(
 
     return X, Y, x, y, psi_real, u, v, q, A_mag, A, omega, phi, dx, dy, K, L
 
+
+def embiggen(small, factor):
+    s1, s2 = small.shape
+    big = np.zeros((s1 * factor, s2 * factor), dtype=complex)
+    big[:s1//2,:s2//2] = small[:s1//2,:s2//2]
+    big[-s1//2:,:s2//2] = small[-s1//2:,:s2//2]
+    big[:s1//2,-s2//2:] = small[:s1//2,-s2//2:]
+    big[-s1//2:,-s2//2:] = small[-s1//2:,-s2//2:]
+    return big * factor**2
 
 def generate_rossby_field(
     seed=123,
