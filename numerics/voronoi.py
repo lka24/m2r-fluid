@@ -26,6 +26,8 @@ SEED = 123
 GAMMA = 0.0
 SCALE_FACTOR = 1.0
 ONLY_EPS = False
+DISTRIBUTE = "random"
+
 
 PLOTTING = "ANIMATION"
 DOTS = True
@@ -338,10 +340,40 @@ def main():
         x, y, u_arr, v_arr
     )
 
-    init_x = np.linspace(x_range[0], x_range[1], Nx, endpoint=False)
-    init_y = np.linspace(y_range[0], y_range[1], Ny, endpoint=False)
+    if DISTRIBUTE == "random":
+        num_particles = Nx * Ny
 
-    init_x, init_y = rkm.pointsquare(init_x, init_y)
+        init_x = np.random.uniform(
+            min(x_range),
+            max(x_range),
+            num_particles
+        )
+
+        init_y = np.random.uniform(
+            min(y_range),
+            max(y_range),
+            num_particles
+        )
+
+    elif DISTRIBUTE == "linspace":
+        init_x = np.linspace(
+            min(x_range),
+            max(x_range),
+            Nx,
+            endpoint=False
+        )
+
+        init_y = np.linspace(
+            min(y_range),
+            max(y_range),
+            Ny,
+            endpoint=False
+        )
+
+        init_x, init_y = rkm.pointsquare(init_x, init_y)
+
+    else:
+        raise ValueError("DISTRIBUTE must be either 'random' or 'linspace'.")
 
     history = rkm.runge_single(
         0.0,
@@ -354,7 +386,6 @@ def main():
         ONLY_EPS,
     )
 
-    # Final Voronoi calculation BEFORE animation
     final_t, final_x, final_y = history[-1]
     final_x, final_y = wrap_positions(final_x, final_y)
 
