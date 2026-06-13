@@ -34,7 +34,7 @@ def init_rossby(
     Lx=1e3,
     Ly=1e3,
     Rd=20,
-    intended_factor=3
+    intended_factor=1
 ):
     x = np.linspace(-Lx / 2, Lx / 2, Nx * intended_factor, endpoint=False)
     y = np.linspace(-Ly / 2, Ly / 2, Ny * intended_factor, endpoint=False)
@@ -70,7 +70,8 @@ def generate_rossby_field_2(
     Nx=200,
     Ny=200,
     given_phi=None,
-    target_speed=20.0   # km/day, about 0.23 m/s
+    target_speed=20.0,   # km/day, about 0.23 m/s
+    emb=False
 ):
     if given_phi is None:
         phi = np.random.uniform(0, 2 * np.pi, size=(Ny, Nx))
@@ -93,9 +94,9 @@ def generate_rossby_field_2(
     # In order to achieve less numerical interference
     # when taking the DFT/inverse DFT, we will pad
     # the array with zeroes before doing so.
-
-    u_hat = embiggen(u_hat, 3)
-    v_hat = embiggen(v_hat, 3)
+    if emb:
+        u_hat = embiggen(u_hat, 3)
+        v_hat = embiggen(v_hat, 3)
     # psi_base = np.fft.ifft2(psi_hat_base).real
 
     # u_base = -np.gradient(psi_base, dy, axis=0)

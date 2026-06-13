@@ -20,15 +20,15 @@ DT = 0.1 #day
 ONLY_EPS = False
 METHOD = "linear"
 DISTRIBUTE = "linspace"
-Nx=20
-Ny=20
+Nx=5
+Ny=5
 Nplots=2
 t0 = 0.0
 PLOTTING = "2D"
 DOTS = False
 SEED = np.random.randint(1, 10001)
 SCALE_FACTOR = 1
-GAMMA = 0
+GAMMA = 0.1
 
 # Now in order to interpolate u and v, we must incorporate time,
 # thus we construct arrays of u and v for each time we are interested

@@ -11,8 +11,11 @@ import time
 from matplotlib.animation import FuncAnimation
 from propagation_with_potential_phi import solve_potential_from_material_derivative
 
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['cmss10']
+plt.rcParams['axes.unicode_minus'] = False
 
-ITERS = 1000
+ITERS = 10000
 DT = 0.1
 ONLY_EPS = False
 METHOD = "linear"
@@ -25,13 +28,13 @@ t0 = 0.0
 SEED = np.random.randint(1, 10001)
 
 SCALE_FACTOR = 1
-GAMMA = 0.1
+GAMMA = 0.3
 
 SHOW_ONLY_CLUSTER = False
 CLUSTER_THRESHOLD = 2.0
 
 SAVE_GIF = False
-SAVE_MASS_PLOT = False
+SAVE_MASS_PLOT = True
 
 
 start = time.time()
@@ -43,7 +46,7 @@ phis = pstoch.vector_solve_stochastic_phi(
     days=int(ITERS * DT),
     size=(200, 200),
     dt=DT,
-    strength=0
+    strength=0.01
 )
 
 print("PHI time:", time.time() - start)
@@ -53,14 +56,15 @@ start = time.time()
 for j in range(ITERS + 1):
 
     if j == 0:
-        rX, rY, rx, ry, romega, rA_base, rdx, rdy, rq, rK, rL = invf.init_rossby()
+        rX, rY, rx, ry, romega, rA_base, rdx, rdy, rq, rK, rL = invf.init_rossby(intended_factor=3)
 
     phi_now = phis[j]
 
     X, Y, exes, whys, psi_real, u, v, q, A_mag, A, omega, phi, dX, dY, kay, ell = invf.generate_rossby_field_2(
         rX, rY, rx, ry, rq, romega, rA_base, rdx, rdy, rK, rL,
         t=j * DT,
-        given_phi=phi_now.astype(np.float64)
+        given_phi=phi_now.astype(np.float64),
+        emb=True
     )
 
     if j == 0:
@@ -81,22 +85,21 @@ for j in range(ITERS + 1):
             dy=dY,
             K=kay,
             L=ell,
-            Rd=100
+            Rd=100,
+            give_hat=True,
+            shift=True
         )
 
-        u_p = np.gradient(pot, dX, axis=1)
-        v_p = np.gradient(pot, dY, axis=0)
-
-        u = invf.debiggen(u, 3)
-        v = invf.debiggen(v, 3)
+        u_p_hat, v_p_hat = invf.embiggen(1j*kay*pot, 3), invf.embiggen(1j*ell*pot, 3)
+        # u_p = spn.zoom(u_p, 3.0, order=1, mode="grid-wrap")
+        # v_p = spn.zoom(v_p, 3.0, order=1, mode="grid-wrap")
+        u_p, v_p = np.fft.fftshift(np.fft.ifft2(u_p_hat)), np.fft.fftshift(np.fft.ifft2(v_p_hat))
         u = GAMMA * u_p + (1 - GAMMA) * u
         v = GAMMA * v_p + (1 - GAMMA) * v
-        # u = invf.embiggen(u, 3)
-        # v = invf.embiggen(v, 3)
 
     if u_arr is None:
-        u_arr = np.empty((ITERS + 1, u.shape[0], u.shape[1]))
-        v_arr = np.empty((ITERS + 1, v.shape[0], v.shape[1]))
+        u_arr = np.memmap("u_arr_mem.dat", mode="w+", dtype="float64", shape=(ITERS + 1, u.shape[0], u.shape[1]))
+        v_arr = np.memmap("v_arr_mem.dat", mode="w+", dtype="float64", shape=(ITERS + 1, v.shape[0], v.shape[1]))
 
     u_arr[j] = u
     v_arr[j] = v
@@ -138,7 +141,7 @@ elif DISTRIBUTE == "linspace":
 def interpolatify_u(idx):
     return spi.RegularGridInterpolator(
         (whys, exes),
-        spn.zoom(u[idx], 3.0, order=1, mode="grid-wrap"),
+        u_arr[idx],
         METHOD
     )
 
@@ -146,7 +149,7 @@ def interpolatify_u(idx):
 def interpolatify_v(idx):
     return spi.RegularGridInterpolator(
         (whys, exes),
-        spn.zoom(v[idx], 3.0, order=1, mode="grid-wrap"),
+        v_arr[idx],
         METHOD
     )
 
@@ -273,52 +276,54 @@ print("Final cluster particle fraction =", cluster_particle_fraction[-1])
 print("Final mean cluster C =", mean_cluster_C_hist[-1])
 print("Final max cluster C =", max_cluster_C_hist[-1])
 
+try:
+    if SAVE_MASS_PLOT:
+        fig_mass, ax_mass = plt.subplots(figsize=(6, 4))
 
-if SAVE_MASS_PLOT:
-    fig_mass, ax_mass = plt.subplots(figsize=(6, 4))
+        ax_mass.plot(time_hist, cluster_mass, label="Cluster mass")
+        ax_mass.plot(
+            time_hist,
+            cluster_particle_fraction,
+            label="Particle fraction",
+            linestyle="--"
+        )
 
-    ax_mass.plot(time_hist, cluster_mass, label="Cluster mass")
-    ax_mass.plot(
-        time_hist,
-        cluster_particle_fraction,
-        label="Particle fraction",
-        linestyle="--"
-    )
+        ax_mass.set_xlabel("time (day)")
+        ax_mass.set_ylabel("fraction")
+        ax_mass.set_title(
+            f"Cluster mass, gamma = {GAMMA}, threshold C > {CLUSTER_THRESHOLD}"
+        )
 
-    ax_mass.set_xlabel("time (day)")
-    ax_mass.set_ylabel("fraction")
-    ax_mass.set_title(
-        f"Cluster mass, gamma = {GAMMA}, threshold C > {CLUSTER_THRESHOLD}"
-    )
+        ax_mass.legend()
+        ax_mass.grid(True)
 
-    ax_mass.legend()
-    ax_mass.grid(True)
+        plt.savefig(
+            f"cluster_mass_gamma_{GAMMA}.png",
+            dpi=300,
+            bbox_inches="tight"
+        )
 
-    plt.savefig(
-        f"cluster_mass_gamma_{GAMMA}.png",
-        dpi=300,
-        bbox_inches="tight"
-    )
+        fig_c, ax_c = plt.subplots(figsize=(6, 4))
 
-    fig_c, ax_c = plt.subplots(figsize=(6, 4))
+        ax_c.plot(time_hist, mean_cluster_C_hist, label="Mean cluster C")
+        ax_c.plot(time_hist, max_cluster_C_hist, label="Max cluster C")
 
-    ax_c.plot(time_hist, mean_cluster_C_hist, label="Mean cluster C")
-    ax_c.plot(time_hist, max_cluster_C_hist, label="Max cluster C")
+        ax_c.set_xlabel("time (day)")
+        ax_c.set_ylabel("C")
+        ax_c.set_title(
+            f"Cluster concentration, gamma = {GAMMA}, threshold C > {CLUSTER_THRESHOLD}"
+        )
 
-    ax_c.set_xlabel("time (day)")
-    ax_c.set_ylabel("C")
-    ax_c.set_title(
-        f"Cluster concentration, gamma = {GAMMA}, threshold C > {CLUSTER_THRESHOLD}"
-    )
+        ax_c.legend()
+        ax_c.grid(True)
 
-    ax_c.legend()
-    ax_c.grid(True)
-
-    plt.savefig(
-        f"cluster_concentration_gamma_{GAMMA}.png",
-        dpi=300,
-        bbox_inches="tight"
-    )
+        plt.savefig(
+            f"cluster_concentration_gamma_{GAMMA}.png",
+            dpi=300,
+            bbox_inches="tight"
+        )
+except:
+    pass
 
 
 xmin, xmax = x_range
@@ -362,8 +367,8 @@ ax.set_ylabel("y (km)")
 
 title = ax.set_title("")
 
-ANIMATION_SECONDS = 10
-TOTAL_FRAMES = 300
+ANIMATION_SECONDS = 20
+TOTAL_FRAMES = 1000
 
 frame_indices = np.linspace(
     0,
@@ -401,7 +406,7 @@ def update(frame):
         )
     else:
         title.set_text(
-            f"All particles, gamma = {GAMMA}, t = {time_hist[frame]:.2f} days"
+            f"{time_hist[frame]:.2f} days"
         )
 
     return scat, title
@@ -410,7 +415,7 @@ def update(frame):
 ani = FuncAnimation(
     fig,
     update,
-    frames=frame_indices,
+    frames=frame_indices[::3],
     interval=interval,
     blit=False
 )
@@ -421,7 +426,9 @@ if SAVE_GIF:
     ani.save(
         f"concentration_{mode_name}_gamma_{GAMMA}.gif",
         writer="pillow",
-        fps=30
+        #fps=30,
+        dpi=300
     )
 
 plt.show()
+
