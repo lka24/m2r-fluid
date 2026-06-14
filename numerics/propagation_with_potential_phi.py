@@ -34,27 +34,41 @@ def laplacian(f, dx, dy):
     )
 
 
-def solve_potential_from_material_derivative(psi, psi_old, dx, dy, dt, K, L, Rd):
-    q = laplacian(psi, dx, dy) - psi / Rd**2
-    q_old = laplacian(psi_old, dx, dy) - psi_old / Rd**2
+def solve_potential_from_material_derivative(psi, psi_old, dx, dy, dt, K, L, Rd, give_hat=False, shift=False):
+    if shift:
+        psi = np.fft.ifftshift(psi)
+        psi_old = np.fft.ifftshift(psi_old)
 
-    q_t = (q - q_old) / dt
-    q_x = np.gradient(q, dx, axis=1)
-    q_y = np.gradient(q, dy, axis=0)
-
-    u_psi = -np.gradient(psi, dy, axis=0)
-    v_psi = np.gradient(psi, dx, axis=1)
-
-    rhs = q_t + u_psi * q_x + v_psi * q_y
+    # Use an exact FT method to compute
+    psi_hat = np.fft.fft2(psi)
+    psi_old_hat = np.fft.fft2(psi_old)
 
     k2 = K**2 + L**2
     k2[0, 0] = 1e-10
 
+    # Note laplacian operator becomes ksquared + lsquared i.e. k2
+    q_hat = -(k2 + 1/Rd**2) * psi_hat
+    q_old_hat = -(k2 + 1/Rd**2) * psi_old_hat
+    q = np.fft.ifft2(q_hat).real
+    q_old = np.fft.ifft2(q_old_hat).real
+
+    q_t = (q - q_old) / dt
+    q_x = np.fft.ifft2(1j*K*q_hat).real
+    q_y = np.fft.ifft2(1j*L*q_hat).real
+
+    u_psi = np.fft.ifft2(-1j * L * psi_hat).real
+    v_psi = np.fft.ifft2(1j * K * psi_hat).real
+
+    rhs = q_t + u_psi * q_x + v_psi * q_y
+
     potential_hat = -np.fft.fft2(rhs) / k2
     potential_hat[0, 0] = 0
 
-    return np.fft.ifft2(potential_hat).real
-
+    if not give_hat:
+        if not shift:
+            return np.fft.ifft2(potential_hat).real
+        return np.fft.fftshift(np.fft.ifft2(potential_hat).real)
+    return potential_hat
 
 def animate_rossby_potential_psi_velocity(
     seed=123,

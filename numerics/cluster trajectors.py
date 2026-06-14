@@ -189,7 +189,7 @@ phis = pstoch.vector_solve_stochastic_phi(
     days=int(ITERS * DT),
     size=(200, 200),
     dt=DT,
-    strength=0
+    strength=0.01
 )
 
 print("PHI time:", time.time() - start)
