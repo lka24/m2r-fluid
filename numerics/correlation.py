@@ -163,7 +163,7 @@ def plot_correlations_for_tmems(
 
 
 if __name__ == "__main__":
-    Tmem_values = [0.01, 0.1, 1, 10, 100, 1000]
+    Tmem_values = [1, 10, 100, 1000]
 
     plot_correlations_for_tmems(
         Tmem_values=Tmem_values,
