@@ -20,9 +20,8 @@ Ny = 20
 METHOD = "linear"
 SEED = 123
 
-GAMMA = 0.5
-GAMMA_PDF_VALUES = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
+GAMMA = 0.0
+GAMMA_PDF_VALUES = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
 SCALE_FACTOR = 1.0
 ONLY_EPS = False
 DISTRIBUTE = "random"
@@ -42,7 +41,7 @@ def build_velocity_data(gamma_value):
         days=int(ITERS * DT),
         size=(200, 200),
         dt=DT,
-        strength=0.1,
+        strength=0.01,
     )
 
     rX, rY, rx, ry, romega, rA_base, rdx, rdy, rq, rK, rL = invf.init_rossby()
@@ -275,16 +274,42 @@ def run_simulation(gamma_value):
 
 
 def plot_area_pdf_comparison(area_dict):
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, axes = plt.subplots(
+        3,
+        3,
+        figsize=(15, 8),
+        sharex=True,
+        sharey=True
+    )
 
-    for gamma_value, areas in area_dict.items():
+    axes = axes.ravel()
+
+    for ax, (gamma_value, areas) in zip(axes, area_dict.items()):
         areas = areas[np.isfinite(areas)]
         areas = areas[areas > 0]
 
         if len(areas) == 0:
+            ax.set_title(rf"$\gamma={gamma_value}$")
+            ax.text(
+                0.5,
+                0.5,
+                "No valid areas",
+                transform=ax.transAxes,
+                ha="center",
+                va="center"
+            )
             continue
 
         normalised_areas = areas / np.mean(areas)
+
+        ax.hist(
+            normalised_areas,
+            bins=30,
+            density=True,
+            alpha=0.45,
+            edgecolor="black",
+            label="Histogram"
+        )
 
         if len(normalised_areas) > 2 and np.std(normalised_areas) > 0:
             kde = sps.gaussian_kde(normalised_areas)
@@ -298,14 +323,20 @@ def plot_area_pdf_comparison(area_dict):
                 xs,
                 kde(xs),
                 linewidth=2,
-                label=rf"$\gamma={gamma_value}$"
+                label="KDE"
             )
 
-    ax.set_xlabel(r"$A / \langle A \rangle$")
-    ax.set_ylabel("Probability density")
-    ax.set_title("PDF of Voronoi cell areas for different gamma")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
+        ax.set_xlim(0, 5)
+        ax.set_title(rf"$\gamma={gamma_value}$")
+        ax.set_xlabel(r"$A / \langle A \rangle$")
+        ax.set_ylabel("Probability density")
+        ax.grid(True, alpha=0.3)
+        ax.legend(fontsize=8)
+
+    fig.suptitle(
+        "PDF of Voronoi cell areas for different gamma",
+        fontsize=16
+    )
 
     plt.tight_layout()
 
@@ -314,7 +345,93 @@ def plot_area_pdf_comparison(area_dict):
 
     plt.show()
 
+def plot_kde_heatmap(area_dict):
 
+    gamma_values = sorted(area_dict.keys())
+
+    x_grid = np.linspace(0, 5, 400)
+
+    density_matrix = []
+
+    for gamma in gamma_values:
+
+        areas = area_dict[gamma]
+
+        areas = areas[np.isfinite(areas)]
+        areas = areas[areas > 0]
+
+        if len(areas) < 5:
+            density_matrix.append(np.zeros_like(x_grid))
+            continue
+
+        normalised = areas / np.mean(areas)
+
+        kde = sps.gaussian_kde(normalised)
+
+        density_matrix.append(
+            kde(x_grid)
+        )
+
+    density_matrix = np.array(density_matrix)
+
+    X, Y = np.meshgrid(
+        x_grid,
+        gamma_values
+    )
+
+    plt.figure(figsize=(9, 6))
+
+    contour = plt.contourf(
+        X,
+        Y,
+        density_matrix,
+        levels=40,
+        cmap="viridis"
+    )
+
+    plt.colorbar(
+        contour,
+        label="Probability density"
+    )
+
+    contours = plt.contour(
+        X,
+        Y,
+        density_matrix,
+        levels=12,
+        colors="white",
+        linewidths=0.5,
+        alpha=0.6
+    )
+
+    plt.clabel(
+        contours,
+        inline=True,
+        fontsize=7,
+        fmt="%.2f"
+    )
+
+    plt.xlabel(
+        r"$A/\langle A\rangle$",
+        fontsize=12
+    )
+
+    plt.ylabel(
+        r"$\gamma$",
+        fontsize=12
+    )
+
+    plt.title(
+        "Evolution of Voronoi-area PDF with divergence strength",
+        fontsize=14
+    )
+
+    plt.xlim(0, 5)
+
+    plt.tight_layout()
+
+    plt.show()
+    
 def animate_voronoi(history, x_range, y_range, wrap_positions):
     time_hist = np.array([step[0] for step in history])
     x_hist = np.array([step[1] for step in history])
@@ -401,6 +518,8 @@ def main():
             print("Total Voronoi area:", np.sum(final_areas))
 
     plot_area_pdf_comparison(area_dict)
+    plot_kde_heatmap(area_dict)
+
 
     print(f"Running animation for GAMMA = {GAMMA}")
 
